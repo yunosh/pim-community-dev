@@ -344,13 +344,6 @@ class ProposalController
 
         $data = json_decode($request->getContent(), true);
 
-        if (null === $this->productDraftBuilder->build($product, $data['username'])) {
-            $status = Response::HTTP_NO_CONTENT;
-            $response = $this->getResponse($product, $status);
-
-            return $response;
-        }
-
         $productDraft = $this->productDraftRepository
             ->findOneBy(['product' => $product, 'author' => $data['author']]);
         if (null === $productDraft) {
