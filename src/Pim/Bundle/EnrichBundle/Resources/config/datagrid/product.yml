@@ -137,6 +137,20 @@ datagrid:
                     empty_selection: pim_datagrid.mass_action.delete.empty_selection
                 launcherOptions:
                     group: bulk_actions
+            synch:
+                type: synch
+                label: Synch
+                entity_name: product
+                handler: synch
+                messages:
+                    confirm_title: Synchronize products
+                    confirm_content: Are you sur you want to synchronize these products
+                    confirm_ok: pim_datagrid.mass_action.delete.confirm_ok
+                    success: Product well synchronized
+                    error: pim_datagrid.mass_action.delete.error
+                    empty_selection: pim_datagrid.mass_action.delete.empty_selection
+                launcherOptions:
+                    group: bulk_actions
             quick_export_grid_context_xlsx:
                 type: export
                 label: pim.grid.mass_action.quick_export.xlsx_grid_context

@@ -3,6 +3,7 @@
 namespace Pim\Bundle\EnrichBundle\Controller\Rest;
 
 use Akeneo\Bundle\StorageUtilsBundle\DependencyInjection\AkeneoStorageUtilsExtension;
+use Akeneo\Component\Classification\Repository\CategoryRepositoryInterface;
 use Akeneo\Component\StorageUtils\Remover\RemoverInterface;
 use Akeneo\Component\StorageUtils\Saver\SaverInterface;
 use Akeneo\Component\StorageUtils\Updater\ObjectUpdaterInterface;
@@ -99,6 +100,10 @@ class ProductController
 
     /** @var string */
     protected $storageDriver;
+    /**
+     * @var CategoryRepositoryInterface
+     */
+    private $categoryRepository;
 
     /**
      * @param ProductRepositoryInterface   $productRepository
@@ -120,6 +125,7 @@ class ProductController
      * @param ChannelRepositoryInterface   $channelRepository
      * @param CollectionFilterInterface    $collectionFilter
      * @param NormalizerInterface          $completenessCollectionNormalizer
+     * @param CategoryRepositoryInterface  $categoryRepository
      * @param string                       $storageDriver
      */
     public function __construct(
@@ -142,6 +148,7 @@ class ProductController
         ChannelRepositoryInterface $channelRepository,
         CollectionFilterInterface $collectionFilter,
         NormalizerInterface $completenessCollectionNormalizer,
+        CategoryRepositoryInterface $categoryRepository,
         $storageDriver
     ) {
         $this->productRepository = $productRepository;
@@ -164,6 +171,7 @@ class ProductController
         $this->collectionFilter = $collectionFilter;
         $this->completenessCollectionNormalizer = $completenessCollectionNormalizer;
         $this->storageDriver = $storageDriver;
+        $this->categoryRepository = $categoryRepository;
     }
 
     /**
@@ -221,6 +229,18 @@ class ProductController
             $request->request->get('identifier'),
             $request->request->get('family', null)
         );
+
+        $groups = $this->userContext->getUser()->getGroups();
+
+        foreach ($groups as $group) {
+            $category = $this->categoryRepository->findOneByIdentifier($group->getName());
+            if (null !== $category) {
+                $product->addCategory($category);
+                break;
+            } else {
+                continue;
+            }
+        }
 
         $violations = $this->validator->validate($product);
         if (0 === $violations->count()) {

@@ -1,11 +1,13 @@
 parameters:
     pim_datagrid.extension.mass_action.type.export.class:                 Pim\Bundle\DataGridBundle\Extension\MassAction\Actions\Export\ExportMassAction
     pim_datagrid.extension.mass_action.type.delete.class:                 Pim\Bundle\DataGridBundle\Extension\MassAction\Actions\Ajax\DeleteMassAction
+    pim_datagrid.extension.mass_action.type.synch.class:                 Pim\Bundle\DataGridBundle\Extension\MassAction\Actions\Ajax\SynchMassAction
     pim_datagrid.extension.mass_action.handler.edit.class:                Pim\Bundle\DataGridBundle\Extension\MassAction\Handler\EditMassActionHandler
     pim_datagrid.extension.mass_action.handler.export.class:              Pim\Bundle\DataGridBundle\Extension\MassAction\Handler\ExportMassActionHandler
     pim_datagrid.extension.mass_action.handler.sequential_edit.class:     Pim\Bundle\DataGridBundle\Extension\MassAction\Handler\SequentialEditActionHandler
     pim_datagrid.extension.mass_action.handler.delete.class:              Pim\Bundle\DataGridBundle\Extension\MassAction\Handler\DeleteMassActionHandler
     pim_datagrid.extension.mass_action.handler.product_delete.class:      Pim\Bundle\DataGridBundle\Extension\MassAction\Handler\DeleteProductsMassActionHandler
+    pim_datagrid.extension.mass_action.handler.product_synch.class:      Pim\Bundle\DataGridBundle\Extension\MassAction\Handler\SynchProductsMassActionHandler
     pim_datagrid.extension.mass_action.dispatcher.class:                  Pim\Bundle\DataGridBundle\Extension\MassAction\MassActionDispatcher
     pim_datagrid.extension.mass_action.handler.registry.class:            Pim\Bundle\DataGridBundle\Extension\MassAction\MassActionHandlerRegistry
     pim_datagrid.extension.mass_action.util.product_fields_builder.class: Pim\Bundle\DataGridBundle\Extension\MassAction\Util\ProductFieldsBuilder
@@ -76,6 +78,17 @@ services:
         tags:
             - { name: pim_datagrid.extension.mass_action.handler, alias: product_mass_delete }
 
+    pim_datagrid.extension.mass_action.handler.product_synch:
+        class: '%pim_datagrid.extension.mass_action.handler.product_synch.class%'
+        arguments:
+            - '@pim_datagrid.datasource.result_record.hydrator.object_id'
+            - '@event_dispatcher'
+            - '@kernel'
+            - '%kernel.root_dir%'
+            - '@pim_catalog.repository.product'
+        tags:
+            - { name: pim_datagrid.extension.mass_action.handler, alias: synch }
+
     # Mass actions
     pim_datagrid.extension.mass_action.type.export:
         class: '%pim_datagrid.extension.mass_action.type.export.class%'
@@ -94,6 +107,12 @@ services:
         scope: prototype
         tags:
             - { name: oro_datagrid.extension.mass_action.type, type: delete }
+
+    pim_datagrid.extension.mass_action.type.synch:
+        class: '%pim_datagrid.extension.mass_action.type.synch.class%'
+        scope: prototype
+        tags:
+            - { name: oro_datagrid.extension.mass_action.type, type: synch }
 
     # Handler registry
     pim_datagrid.extension.mass_action.handler.registry:

@@ -11,6 +11,7 @@ use Pim\Component\Catalog\Manager\CompletenessManager;
 use Pim\Component\Catalog\Model\ProductInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\GenericEvent;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Product saver, define custom logic and options for product saving

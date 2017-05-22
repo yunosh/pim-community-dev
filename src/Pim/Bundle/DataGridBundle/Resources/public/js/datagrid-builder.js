@@ -23,7 +23,7 @@ define(function (require) {
             percent:   'number'
         },
 
-        reservedActions = ['export', 'ajax', 'redirect', 'edit', 'delete'],
+        reservedActions = ['export', 'ajax', 'redirect', 'edit', 'delete', 'synch'],
 
         helpers = {
             cellType: function (type) {
