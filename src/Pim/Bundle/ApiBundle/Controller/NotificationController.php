@@ -2,11 +2,19 @@
 
 namespace Pim\Bundle\ApiBundle\Controller;
 
+use Akeneo\Component\StorageUtils\Factory\SimpleFactoryInterface;
 use Akeneo\Component\StorageUtils\Remover\RemoverInterface;
+use Pim\Bundle\NotificationBundle\Entity\Notification;
 use Pim\Bundle\NotificationBundle\Entity\Repository\UserNotificationRepositoryInterface;
+use Pim\Bundle\NotificationBundle\Factory\NotificationFactoryInterface;
+use Pim\Bundle\NotificationBundle\NotifierInterface;
 use Pim\Bundle\UserBundle\Context\UserContext;
+use Pim\Bundle\UserBundle\Repository\UserRepositoryInterface;
 use Pim\Component\Catalog\Repository\ProductRepositoryInterface;
 use PimEnterprise\Bundle\WorkflowBundle\Doctrine\ORM\Repository\ProductDraftRepository;
+use PimEnterprise\Bundle\WorkflowBundle\EventSubscriber\ProductDraft\SendForApprovalSubscriber;
+use PimEnterprise\Bundle\WorkflowBundle\Provider\OwnerGroupsProvider;
+use PimEnterprise\Bundle\WorkflowBundle\Provider\UsersToNotifyProvider;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -29,6 +37,26 @@ class NotificationController
      * @var ProductDraftRepository
      */
     private $productDraftRepository;
+    /**
+     * @var UserRepositoryInterface
+     */
+    private $userRepository;
+    /**
+     * @var NotifierInterface
+     */
+    private $notifier;
+    /**
+     * @var OwnerGroupsProvider
+     */
+    private $ownerGroupsProvider;
+    /**
+     * @var UsersToNotifyProvider
+     */
+    private $usersProvider;
+    /**
+     * @var SimpleFactoryInterface
+     */
+    private $notificationFactory;
 
     /**
      * @param UserContext                         $userContext
@@ -36,19 +64,34 @@ class NotificationController
      * @param RemoverInterface                    $userNotifRemover
      * @param ProductRepositoryInterface          $productRepository
      * @param ProductDraftRepository              $productDraftRepository
+     * @param UserRepositoryInterface             $userRepository
+     * @param NotifierInterface                   $notifier
+     * @param OwnerGroupsProvider                 $ownerGroupsProvider
+     * @param UsersToNotifyProvider               $usersProvider
+     * @param SimpleFactoryInterface              $notificationFactory
      */
     public function __construct(
         UserContext $userContext,
         UserNotificationRepositoryInterface $userNotifRepository,
         RemoverInterface $userNotifRemover,
         ProductRepositoryInterface $productRepository,
-        ProductDraftRepository $productDraftRepository
+        ProductDraftRepository $productDraftRepository,
+        UserRepositoryInterface $userRepository,
+        NotifierInterface $notifier,
+        OwnerGroupsProvider $ownerGroupsProvider,
+        UsersToNotifyProvider $usersProvider,
+        SimpleFactoryInterface $notificationFactory
     ) {
         $this->userContext = $userContext;
         $this->userNotifRepository = $userNotifRepository;
         $this->userNotifRemover = $userNotifRemover;
         $this->productRepository = $productRepository;
         $this->productDraftRepository = $productDraftRepository;
+        $this->userRepository = $userRepository;
+        $this->ownerGroupsProvider = $ownerGroupsProvider;
+        $this->usersProvider = $usersProvider;
+        $this->notificationFactory = $notificationFactory;
+        $this->notifier = $notifier;
     }
 
     /**
@@ -109,6 +152,109 @@ class NotificationController
         }
 
         return new JsonResponse($result);
+    }
+
+    public function draftAction(Request $request, $code, $author)
+    {
+        $product = $this->productRepository->findOneByIdentifier($code);
+        if (null === $product) {
+            return new JsonResponse(null);
+        }
+        $draft = $this->productDraftRepository->findOneBy(['product' => $product, 'author' => $author]);
+        if (null === $draft) {
+            return new JsonResponse(null);
+        }
+
+        $result = [
+            'product_code' => $draft->getProduct()->getIdentifier()->getData(),
+            'changes' => $draft->getChanges(),
+            'author' => $draft->getAuthor(),
+            'status' => $draft->getStatus(),
+        ];
+
+        return new JsonResponse($result);
+    }
+
+    public function newProductNotificationAction()
+    {
+        $user = $this->userRepository->findOneBy(['username' => 'admin']);
+        $userNotifications = $this->userNotifRepository->findBy(['user' => $user]);
+
+        $alreadyNotified = false;
+        if (null !== $userNotifications) {
+            foreach ($userNotifications as $userNotifications) {
+                if ($userNotifications->getNotification()->getMessage() === 'New products are ready to synchronize') {
+                    $alreadyNotified = true;
+                }
+            }
+        }
+
+        if (!$alreadyNotified) {
+            $notification = new Notification();
+
+            $notification
+                ->setType('success')
+                ->setMessage('New products are ready to synchronize')
+                ->setRoute('pim_enrich_product_index')
+                ->setContext(['actionType' => 'Products ready to synchronize']);
+
+            $this->notifier->notify($notification, [$user]);
+        }
+
+        return new JsonResponse(null);
+    }
+
+    public function newProposalNotificationAction($productCode, $comment, $author)
+    {
+        $product = $this->productRepository->findOneByIdentifier($productCode);
+        $author = $this->userRepository->findOneBy(['username' => $author]);
+
+        $usersToNotify = $this->usersProvider->getUsersToNotify(
+            $this->ownerGroupsProvider->getOwnerGroupIds($product)
+        );
+
+        if (!empty($usersToNotify)) {
+            $gridParameters = [
+                'f' => [
+                    'author' => [
+                        'value' => [
+                            $author->getUsername()
+                        ]
+                    ],
+                    'product' => [
+                        'value' => [
+                            $product->getId()
+                        ]
+                    ]
+                ],
+            ];
+
+            $comment = '-' === $comment ? null : urldecode($comment);
+            $notification = $this->notificationFactory->create();
+            $notification
+                ->setMessage('pimee_workflow.proposal.to_review')
+                ->setMessageParams(
+                    [
+                        '%product.label%'    => $product->getLabel(),
+                        '%author.firstname%' => $author->getFirstName(),
+                        '%author.lastname%'  => $author->getLastName()
+                    ]
+                )
+                ->setType('add')
+                ->setRoute('pimee_workflow_proposal_index')
+                ->setComment($comment)
+                ->setContext(
+                    [
+                        'actionType'       => SendForApprovalSubscriber::NOTIFICATION_TYPE,
+                        'showReportButton' => false,
+                        'gridParameters'   => http_build_query($gridParameters, 'flags_')
+                    ]
+                );
+
+            $this->notifier->notify($notification, $usersToNotify);
+        }
+
+        return new JsonResponse(null);
     }
 
     /**
