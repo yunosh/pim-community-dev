@@ -24,6 +24,7 @@ module.exports = {
         chunkFilename: '[name].bundle.js'
     },
     resolve: {
+        extensions: ['.js', '.html', '.json'],
         symlinks: false,
         alias: aliases
     },
@@ -82,39 +83,39 @@ module.exports = {
                 ]
             },
 
-            // Expose the Backbone variable to window
-            {
-                test: /node_modules\/backbone\/backbone.js/,
-                use: [
-                    {
-                        loader: 'expose-loader',
-                        options: 'Backbone'
-                    }
-                ]
-            },
-            {
-                test: /node_modules\/backbone\/backbone.js/,
-                use: [
-                    {
-                        loader: 'imports-loader',
-                        options: 'this=>window'
-                    }
-                ]
-            },
-
             // Expose jQuery to window
-            {
-                test: /node_modules\/jquery\/dist\/jquery.js/,
-                use: [
-                    {
-                        loader: 'expose-loader',
-                        options: 'jQuery'
-                    }, {
-                        loader: 'expose-loader',
-                        options: '$'
-                    }
-                ]
-            },
+            // {
+            //     test: /(jquery\/dist\/jquery.js|jquery.js)/,
+            //     use: [
+            //         {
+            //             loader: 'expose-loader',
+            //             options: 'jQuery'
+            //         }, {
+            //             loader: 'expose-loader',
+            //             options: '$'
+            //         }
+            //     ]
+            // },
+            //
+            // // Expose the Backbone variable to window
+            // {
+            //     test: /backbone\/backbone.js/,
+            //     use: [
+            //         {
+            //             loader: 'expose-loader',
+            //             options: 'Backbone'
+            //         }
+            //     ]
+            // },
+            // {
+            //     test: /backbone\/backbone.js/,
+            //     use: [
+            //         {
+            //             loader: 'imports-loader',
+            //             options: 'this=>window'
+            //         }
+            //     ]
+            // },
 
             // Expose the require-polyfill to window
             {
@@ -151,16 +152,18 @@ module.exports = {
     },
     plugins: [
         // Map modules to variables for global use
-        new webpack.ProvidePlugin({'_': 'underscore', 'Backbone': 'backbone', '$': 'jquery', 'jQuery': 'jquery'}),
+        new webpack.ProvidePlugin({'$': 'jquery', 'jQuery': 'jquery', '_': 'underscore', 'Backbone': 'backbone'}),
 
         // This is for the summernote lib (until it's updated to the latest version)
         new webpack.DefinePlugin({'require.specified': 'require.resolve'}),
 
         // When we dynamically require modules, replace the context with the root directory
-        new ContextReplacementPlugin(/.\/dynamic/, resolve('./')),
+        new ContextReplacementPlugin(/.\/dynamic/, resolve('./'), {
+            jquery: 'test'
+        }),
 
         // A custom plugin to use absolute paths for webpack context map
-        new AddToContextPlugin(values(paths), rootDir),
+        new AddToContextPlugin(values(paths), rootDir, aliases),
 
         // Ignore these directories when webpack watches for changes
         new webpack.WatchIgnorePlugin([
