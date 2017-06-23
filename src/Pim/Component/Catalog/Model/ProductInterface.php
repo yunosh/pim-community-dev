@@ -26,6 +26,10 @@ interface ProductInterface extends
     CategoryAwareInterface,
     EntityWithFamilyInterface
 {
+    public function registerEvent($event);
+
+    public function getEvents();
+
     /**
      * Get the ID of the product
      *

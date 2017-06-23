@@ -3,6 +3,9 @@
 namespace Pim\Component\Catalog\Builder;
 
 use Pim\Component\Catalog\AttributeTypes;
+use Pim\Component\Catalog\Event\Product\CreatedWithIdentifierAndFamilyEvent;
+use Pim\Component\Catalog\Event\Product\CreatedWithIdentifierEvent;
+use Pim\Component\Catalog\Event\Product\CreatedWithoutIdentifierEvent;
 use Pim\Component\Catalog\Manager\AttributeValuesResolverInterface;
 use Pim\Component\Catalog\Model\AttributeInterface;
 use Pim\Component\Catalog\Model\EntityWithValuesInterface;
@@ -82,15 +85,22 @@ class ProductBuilder implements ProductBuilderInterface
     {
         $product = new $this->productClass();
 
+        // TODO: FulfilledNewValueEvent appears before CreatedWithIdentifierEvent or CreatedWithIdentifierAndFamilyEvent
+        $identifierAttribute = $this->attributeRepository->getIdentifier();
         if (null !== $identifier) {
-            $identifierAttribute = $this->attributeRepository->getIdentifier();
             $this->addOrReplaceValue($product, $identifierAttribute, null, null, $identifier);
         }
 
+        $identifierValue = $product->getValue($identifierAttribute->getCode(), null, null);
         if (null !== $familyCode) {
             $family = $this->familyRepository->findOneByIdentifier($familyCode);
             $product->setFamily($family);
             $this->addBooleanToProduct($product);
+            $product->registerEvent(new CreatedWithIdentifierAndFamilyEvent($product, $identifierValue, $family));
+        } else if (null !== $identifier) {
+            $product->registerEvent(new CreatedWithIdentifierEvent($product, $identifierValue));
+        } else {
+            $product->registerEvent(new CreatedWithoutIdentifierEvent($product));
         }
 
         $event = new GenericEvent($product);

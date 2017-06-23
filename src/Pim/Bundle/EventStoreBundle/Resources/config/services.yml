@@ -1,0 +1,12 @@
+parameters:
+    pim_event_store.event_subscriber.store.class: Pim\Bundle\EventStoreBundle\StoreSubscriber
+
+services:
+    pim_event_store.event_subscriber.index_products:
+        class: '%pim_event_store.event_subscriber.store.class%'
+        arguments:
+          - '@logger'
+          - '@pim_user.context.user'
+        tags:
+            - { name: kernel.event_subscriber }
+            - { name: monolog.logger, channel: eventstore }

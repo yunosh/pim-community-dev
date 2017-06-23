@@ -7,7 +7,10 @@ use Akeneo\Component\StorageUtils\Saver\SaverInterface;
 use Akeneo\Component\StorageUtils\StorageEvents;
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Util\ClassUtils;
+use Pim\Component\Catalog\Event\Product\CompletedForChannelAndLocale;
+use Pim\Component\Catalog\Event\Product\UncompletedForChannelAndLocale;
 use Pim\Component\Catalog\Manager\CompletenessManager;
+use Pim\Component\Catalog\Model\CompletenessInterface;
 use Pim\Component\Catalog\Model\ProductInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\GenericEvent;
@@ -52,6 +55,8 @@ class ProductSaver implements SaverInterface, BulkSaverInterface
     }
 
     /**
+     * @param ProductInterface $product
+     *
      * {@inheritdoc}
      */
     public function save($product, array $options = [])
@@ -62,12 +67,53 @@ class ProductSaver implements SaverInterface, BulkSaverInterface
 
         $this->eventDispatcher->dispatch(StorageEvents::PRE_SAVE, new GenericEvent($product, $options));
 
+        $completedPerChannelLocale = [];
+        foreach ($product->getCompletenesses() as $completeness) {
+            $completedPerChannelLocale[$completeness->getChannel()->getCode()][$completeness->getLocale()->getCode()] =
+                100 === $completeness->getRatio();
+        }
+
         $this->completenessManager->schedule($product);
         $this->completenessManager->generateMissingForProduct($product);
+
+        foreach ($product->getCompletenesses() as $completeness) {
+            if (isset($completedPerChannelLocale[$completeness->getChannel()->getCode()][$completeness->getLocale()->getCode()])) {
+                $oldCompletedPerChannelLocale = $completedPerChannelLocale[$completeness->getChannel()->getCode()][$completeness->getLocale()->getCode()];
+            } else {
+                $oldCompletedPerChannelLocale = false;
+            }
+
+            $newCompletedPerChannelLocale = $completeness->getRatio() === 100;
+            if (true === $oldCompletedPerChannelLocale && false === $newCompletedPerChannelLocale) {
+                $product->registerEvent(
+                    new UncompletedForChannelAndLocale(
+                        $product,
+                        $completeness->getChannel(),
+                        $completeness->getLocale()
+                    )
+                );
+            } elseif (false === $oldCompletedPerChannelLocale && true === $newCompletedPerChannelLocale) {
+                $product->registerEvent(
+                    new CompletedForChannelAndLocale(
+                        $product,
+                        $completeness->getChannel(),
+                        $completeness->getLocale()
+                    )
+                );
+            }
+        }
+
         $this->uniqueDataSynchronizer->synchronize($product);
 
         $this->objectManager->persist($product);
+
+        // TODO: store the events
+
         $this->objectManager->flush();
+
+        foreach ($product->getEvents() as $event) {
+            $this->eventDispatcher->dispatch(get_class($event), $event);
+        }
 
         $this->eventDispatcher->dispatch(StorageEvents::POST_SAVE, new GenericEvent($product, $options));
     }
@@ -90,6 +136,8 @@ class ProductSaver implements SaverInterface, BulkSaverInterface
         $this->eventDispatcher->dispatch(StorageEvents::PRE_SAVE_ALL, new GenericEvent($products, $options));
 
 
+        // TODO completeness event
+
         foreach ($products as $product) {
             $this->eventDispatcher->dispatch(StorageEvents::PRE_SAVE, new GenericEvent($product, $options));
             $this->completenessManager->schedule($product);
@@ -102,6 +150,11 @@ class ProductSaver implements SaverInterface, BulkSaverInterface
         $this->objectManager->flush();
 
         foreach ($products as $product) {
+
+            foreach ($product->getEvents() as $event) {
+                $this->eventDispatcher->dispatch(get_class($event), $event);
+            }
+
             $this->eventDispatcher->dispatch(StorageEvents::POST_SAVE, new GenericEvent($product, $options));
         }
 

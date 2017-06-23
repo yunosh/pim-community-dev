@@ -6,6 +6,13 @@ use Akeneo\Component\Classification\Model\CategoryInterface as BaseCategoryInter
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Pim\Component\Catalog\AttributeTypes;
+use Pim\Component\Catalog\Event\Product\ChangedFamilyEvent;
+use Pim\Component\Catalog\Event\ClassifiedEvent;
+use Pim\Component\Catalog\Event\Product\DefinedFamilyEvent;
+use Pim\Component\Catalog\Event\Product\DisabledEvent;
+use Pim\Component\Catalog\Event\Product\EnabledEvent;
+use Pim\Component\Catalog\Event\Product\FulfilledExistingValueEvent;
+use Pim\Component\Catalog\Event\UnclassifiedEvent;
 
 /**
  * Abstract product
@@ -81,6 +88,7 @@ abstract class AbstractProduct implements ProductInterface
 
     /** @var ArrayCollection */
     protected $uniqueData;
+    protected $events;
 
     /**
      * Constructor
@@ -93,6 +101,7 @@ abstract class AbstractProduct implements ProductInterface
         $this->groups = new ArrayCollection();
         $this->associations = new ArrayCollection();
         $this->uniqueData = new ArrayCollection();
+        $this->events = [];
     }
 
     /**
@@ -262,7 +271,14 @@ abstract class AbstractProduct implements ProductInterface
     {
         if (null !== $family) {
             $this->familyId = $family->getId();
+
+            if ($this->family === null) {
+                $this->registerEvent(new DefinedFamilyEvent($this, $family));
+            } else if ($this->family !== $family) {
+                $this->registerEvent(new ChangedFamilyEvent($this, $family));
+            }
         }
+
         $this->family = $family;
 
         return $this;
@@ -476,7 +492,15 @@ abstract class AbstractProduct implements ProductInterface
      */
     public function setEnabled($enabled)
     {
+        $toChange = $enabled != $this->enabled;
         $this->enabled = $enabled;
+        if ($toChange) {
+            if ($this->enabled) {
+                $this->registerEvent(new EnabledEvent($this));
+            } else {
+                $this->registerEvent(new DisabledEvent($this));
+            }
+        }
 
         return $this;
     }
@@ -719,5 +743,15 @@ abstract class AbstractProduct implements ProductInterface
         $this->uniqueData->add($uniqueData);
 
         return $this;
+    }
+
+    public function registerEvent($event)
+    {
+        $this->events[] = $event;
+    }
+
+    public function getEvents()
+    {
+        return $this->events;
     }
 }

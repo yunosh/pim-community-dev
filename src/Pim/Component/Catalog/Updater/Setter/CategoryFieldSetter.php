@@ -7,6 +7,8 @@ use Akeneo\Component\StorageUtils\Exception\InvalidObjectException;
 use Akeneo\Component\StorageUtils\Exception\InvalidPropertyException;
 use Akeneo\Component\StorageUtils\Exception\InvalidPropertyTypeException;
 use Akeneo\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
+use Pim\Component\Catalog\Event\Product\ClassifiedEvent;
+use Pim\Component\Catalog\Event\Product\UnclassifiedEvent;
 use Pim\Component\Catalog\Model\CategoryInterface;
 use Pim\Component\Catalog\Model\EntityWithValuesInterface;
 
@@ -47,7 +49,7 @@ class CategoryFieldSetter extends AbstractFieldSetter
 
         $this->checkData($field, $data);
 
-        $categories = [];
+        $newCategories = [];
         foreach ($data as $categoryCode) {
             $category = $this->getCategory($categoryCode);
 
@@ -60,16 +62,23 @@ class CategoryFieldSetter extends AbstractFieldSetter
                     $categoryCode
                 );
             }
-            $categories[] = $category;
+            $newCategories[] = $category;
         }
 
-        $oldCategories = $entity->getCategories();
+        $oldCategories = $product->getCategories();
+        $oldCategoriesAsArray = $oldCategories->toArray();
         foreach ($oldCategories as $category) {
-            $entity->removeCategory($category);
+            $product->removeCategory($category);
+            if (!in_array($category, $newCategories)) {
+                $product->registerEvent(new UnclassifiedEvent($product, $category));
+            }
         }
 
-        foreach ($categories as $category) {
-            $entity->addCategory($category);
+        foreach ($newCategories as $category) {
+            $product->addCategory($category);
+            if (!in_array($category, $oldCategoriesAsArray)) {
+                $product->registerEvent(new ClassifiedEvent($product, $category));
+            }
         }
     }
 
