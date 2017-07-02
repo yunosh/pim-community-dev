@@ -5,6 +5,7 @@ namespace Pim\Behat\Context;
 use Behat\ChainedStepsExtension\Step;
 use Behat\ChainedStepsExtension\Step\Then;
 use Context\Spin\SpinCapableTrait;
+use PHPUnit\Framework\Assert;
 use SensioLabs\Behat\PageObjectExtension\Context\PageObjectAware;
 use SensioLabs\Behat\PageObjectExtension\PageObject\Factory as PageObjectFactory;
 
@@ -146,7 +147,7 @@ class NavigationContext extends PimContext implements PageObjectAware
             $actualUrl = $this->sanitizeUrl($actualFullUrl);
 
             $result = $expectedUrl === $actualUrl;
-            assertTrue($result, sprintf('Expecting to be on the page %s, not %s', $expectedUrl, $actualUrl));
+            Assert::assertTrue($result, sprintf('Expecting to be on the page %s, not %s', $expectedUrl, $actualUrl));
 
             return true;
         }, sprintf('You are not on the %s page', $page));
@@ -236,7 +237,7 @@ class NavigationContext extends PimContext implements PageObjectAware
             $expectedUrl   = $this->sanitizeUrl($expectedFullUrl);
             $result        = $expectedUrl === $actualUrl;
 
-            assertTrue($result, sprintf('Expecting to be on page "%s", not "%s"', $expectedUrl, $actualUrl));
+            Assert::assertTrue($result, sprintf('Expecting to be on page "%s", not "%s"', $expectedUrl, $actualUrl));
 
             return true;
         }, sprintf('Cannot got to the %s edit page', $page));
@@ -387,7 +388,7 @@ class NavigationContext extends PimContext implements PageObjectAware
 
         $message = trim($messageNode->getHtml());
 
-        assertNotEquals('Loading ...', $message, 'The loading message should not equals the default value');
+        Assert::assertNotEquals('Loading ...', $message, 'The loading message should not equals the default value');
     }
 
     /**
@@ -402,7 +403,7 @@ class NavigationContext extends PimContext implements PageObjectAware
             return ($node === null);
         }, 'Found the loading message');
 
-        assertEquals($messageNodeIsNull, true, 'The loading message should not be found');
+        Assert::assertEquals($messageNodeIsNull, true, 'The loading message should not be found');
     }
 
     /**
@@ -463,7 +464,7 @@ class NavigationContext extends PimContext implements PageObjectAware
             $expectedUrl   = $this->sanitizeUrl($expectedFullUrl);
             $result        = $expectedUrl === $actualUrl;
 
-            assertTrue($result, sprintf('Expecting to be on page "%s", not "%s"', $expectedUrl, $actualUrl));
+            Assert::assertTrue($result, sprintf('Expecting to be on page "%s", not "%s"', $expectedUrl, $actualUrl));
 
             return true;
         }, 'Spinning to assert address');

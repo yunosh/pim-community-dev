@@ -7,6 +7,7 @@ use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\ExpectationException;
 use Context\Spin\SpinCapableTrait;
 use Context\Traits\ClosestTrait;
+use PHPUnit\Framework\Assert;
 use Pim\Behat\Context\PimContext;
 use Pim\Component\Catalog\Model\GroupInterface;
 
@@ -147,7 +148,7 @@ class VariantGroupContext extends PimContext
      */
     public function theVariantGroupPropertyShouldBeDisabled($field)
     {
-        assertTrue(
+        Assert::assertTrue(
             $this->findPropertyFieldByLabel($field)->hasAttribute('disabled'),
             sprintf('Expecting field "%s" to be disabled.', $field)
         );
@@ -170,7 +171,7 @@ class VariantGroupContext extends PimContext
             return $this->getClosest($node, 'AknFieldContainer')->find('css', 'input');
         }, 'Unable to find an input in the parent of the label "Axis"');
 
-        assertTrue($field->hasAttribute('disabled'), 'Expecting field "Axis" to be disabled.');
+        Assert::assertTrue($field->hasAttribute('disabled'), 'Expecting field "Axis" to be disabled.');
     }
 
     /**
@@ -195,7 +196,7 @@ class VariantGroupContext extends PimContext
             return $this->getSession()->getPage()->find('css', sprintf('label:contains("%s")', $label));
         }, sprintf('Unable to find a label containing "%s"', $label));
 
-        assertTrue($node->hasAttribute('for'));
+        Assert::assertTrue($node->hasAttribute('for'));
 
         return $this->spin(function () use ($node) {
             return $this->getSession()->getPage()->find('css', sprintf('#%s', $node->getAttribute('for')));

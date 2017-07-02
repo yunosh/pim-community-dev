@@ -9,6 +9,7 @@ use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\ElementNotFoundException;
 use Behat\Mink\Exception\ExpectationException;
 use Context\Spin\SpinCapableTrait;
+use PHPUnit\Framework\Assert;
 use Pim\Behat\Context\PimContext;
 use SensioLabs\Behat\PageObjectExtension\PageObject\Page;
 
@@ -94,7 +95,7 @@ class AssertionContext extends PimContext
         if (!$this->getCurrentPage()->findValidationTooltip($error)) {
             $this->getMainContext()->wait();
             $errors = $this->getCurrentPage()->getValidationErrors();
-            assertTrue(in_array($error, $errors), sprintf('Expecting to see validation error "%s", not found', $error));
+            Assert::assertTrue(in_array($error, $errors), sprintf('Expecting to see validation error "%s", not found', $error));
         }
     }
 
@@ -122,7 +123,7 @@ class AssertionContext extends PimContext
         if ($this->getSession()->getDriver() instanceof Selenium2Driver) {
             $script = 'return $(\'.validation-tooltip[data-original-title="%s"]\').length > 0';
             $found  = $this->getSession()->evaluateScript(sprintf($script, $error));
-            assertFalse($found, sprintf('Expecting to not see validation error, "%s" found', $error));
+            Assert::assertFalse($found, sprintf('Expecting to not see validation error, "%s" found', $error));
         }
     }
 
@@ -145,7 +146,7 @@ class AssertionContext extends PimContext
 
         foreach ($links as $link) {
             if ($link->getText() == $tab) {
-                assertEquals(
+                Assert::assertEquals(
                     $link->getAttribute('class'),
                     'error',
                     sprintf('Expecting tab %s to have class "error", not found.', $tab)
@@ -428,7 +429,7 @@ class AssertionContext extends PimContext
             }
             if (isset($data['author'])) {
                 $author = $row->find('css', 'td.author')->getText();
-                assertEquals(
+                Assert::assertEquals(
                     $data['author'],
                     $author,
                     sprintf(
@@ -542,7 +543,7 @@ class AssertionContext extends PimContext
         }
         fclose($file);
 
-        assertEquals($rows, $rowCount, sprintf('Expecting file to contain %d rows, found %d.', $rows, $rowCount));
+        Assert::assertEquals($rows, $rowCount, sprintf('Expecting file to contain %d rows, found %d.', $rows, $rowCount));
     }
 
     /**
@@ -581,7 +582,7 @@ class AssertionContext extends PimContext
             }
             $actualCount = (int) $countContainer->getText();
 
-            assertEquals(
+            Assert::assertEquals(
                 $actualCount,
                 $count,
                 sprintf('Expecting to see %d new notifications, saw %d', $count, $actualCount)

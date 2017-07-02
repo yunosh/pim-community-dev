@@ -17,6 +17,7 @@ use Doctrine\Common\Util\ClassUtils;
 use Doctrine\DBAL\Schema\Table;
 use League\Flysystem\MountManager;
 use Oro\Bundle\UserBundle\Entity\Role;
+use PHPUnit\Framework\Assert;
 use Pim\Behat\Context\FixturesContext as BaseFixturesContext;
 use Pim\Bundle\CatalogBundle\Doctrine\Common\Saver\ProductSaver;
 use Pim\Bundle\CatalogBundle\Entity\AttributeOption;
@@ -457,9 +458,9 @@ class FixturesContext extends BaseFixturesContext
                 if ('attributes' === $key) {
                     $this->assertArrayEquals(explode(',', $value), $family->getAttributeCodes());
                 } elseif ('attribute_as_label' === $key) {
-                    assertEquals($value, $family->getAttributeAsLabel()->getCode());
+                    Assert::assertEquals($value, $family->getAttributeAsLabel()->getCode());
                 } elseif (preg_match('/^label-(?P<locale>.*)$/', $key, $matches)) {
-                    assertEquals($value, $family->getTranslation($matches['locale'])->getLabel());
+                    Assert::assertEquals($value, $family->getTranslation($matches['locale'])->getLabel());
                 } elseif (preg_match('/^requirements-(?P<channel>.*)$/', $key, $matches)) {
                     $requirements = [];
                     foreach ($family->getAttributeRequirements() as $requirement) {
@@ -486,7 +487,7 @@ class FixturesContext extends BaseFixturesContext
         foreach ($table->getHash() as $data) {
             $currency = $this->getCurrency($data['code']);
 
-            assertEquals($data['activated'], (int) $currency->isActivated());
+            Assert::assertEquals($data['activated'], (int) $currency->isActivated());
         }
     }
 
@@ -501,7 +502,7 @@ class FixturesContext extends BaseFixturesContext
         foreach ($table->getHash() as $data) {
             $locale = $this->getLocale($data['code']);
 
-            assertNotNull($locale);
+            Assert::assertNotNull($locale);
         }
     }
 
@@ -520,9 +521,9 @@ class FixturesContext extends BaseFixturesContext
             foreach ($data as $key => $value) {
                 $matches = null;
                 if ('tree' === $key) {
-                    assertEquals($value, $channel->getCategory()->getCode());
+                    Assert::assertEquals($value, $channel->getCategory()->getCode());
                 } elseif (preg_match('/^label-(?P<locale>.*)$/', $key, $matches)) {
-                    assertEquals($value, $channel->getTranslation($matches['locale'])->getLabel());
+                    Assert::assertEquals($value, $channel->getTranslation($matches['locale'])->getLabel());
                 } elseif ('locales' === $key) {
                     $this->assertArrayEquals(explode(',', $value), $channel->getLocaleCodes());
                 } elseif ('currencies' === $key) {
@@ -559,9 +560,9 @@ class FixturesContext extends BaseFixturesContext
             foreach ($data as $key => $value) {
                 $matches = null;
                 if ('is_variant' === $key) {
-                    assertEquals($value, (int) $groupType->isVariant());
+                    Assert::assertEquals($value, (int) $groupType->isVariant());
                 } elseif (preg_match('/^label-(?P<locale>.*)$/', $key, $matches)) {
-                    assertEquals($value, $groupType->getTranslation($matches['locale'])->getLabel());
+                    Assert::assertEquals($value, $groupType->getTranslation($matches['locale'])->getLabel());
                 } else {
                     throw new \InvalidArgumentException(
                         sprintf('Cannot check "%s" attribute of the group type', $key)
@@ -582,8 +583,8 @@ class FixturesContext extends BaseFixturesContext
         foreach ($table->getHash() as $data) {
             $group = $this->getAttributeGroup($data['code']);
 
-            assertEquals($data['label-en_US'], $group->getTranslation('en_US')->getLabel());
-            assertEquals($data['sort_order'], $group->getSortOrder());
+            Assert::assertEquals($data['label-en_US'], $group->getTranslation('en_US')->getLabel());
+            Assert::assertEquals($data['sort_order'], $group->getSortOrder());
 
             $attributes = $group->getAttributes();
             $codes = [];
@@ -591,7 +592,7 @@ class FixturesContext extends BaseFixturesContext
                 $codes[] = $attribute->getCode();
             }
             asort($codes);
-            assertEquals($data['attributes'], implode(',', $codes));
+            Assert::assertEquals($data['attributes'], implode(',', $codes));
         }
     }
 
@@ -610,10 +611,10 @@ class FixturesContext extends BaseFixturesContext
                 ['code' => $data['code'], 'attribute' => $attribute]
             );
             $option->setLocale('en_US');
-            assertEquals($data['label-en_US'], (string) $option);
+            Assert::assertEquals($data['label-en_US'], (string) $option);
 
             if (isset($data['sort_order'])) {
-                assertEquals($data['sort_order'], (string) $option->getSortOrder());
+                Assert::assertEquals($data['sort_order'], (string) $option->getSortOrder());
             }
         }
     }
@@ -628,11 +629,11 @@ class FixturesContext extends BaseFixturesContext
         $this->getEntityManager()->clear();
         foreach ($table->getHash() as $data) {
             $category = $this->getCategory($data['code']);
-            assertEquals($data['label'], $category->getTranslation('en_US')->getLabel());
+            Assert::assertEquals($data['label'], $category->getTranslation('en_US')->getLabel());
             if (empty($data['parent'])) {
-                assertNull($category->getParent());
+                Assert::assertNull($category->getParent());
             } else {
-                assertEquals($data['parent'], $category->getParent()->getCode());
+                Assert::assertEquals($data['parent'], $category->getParent()->getCode());
             }
         }
     }
@@ -652,7 +653,7 @@ class FixturesContext extends BaseFixturesContext
             foreach ($data as $key => $value) {
                 $matches = null;
                 if (preg_match('/^label-(?P<locale>.*)$/', $key, $matches)) {
-                    assertEquals($value, $associationType->getTranslation($matches['locale'])->getLabel());
+                    Assert::assertEquals($value, $associationType->getTranslation($matches['locale'])->getLabel());
                 } else {
                     throw new \InvalidArgumentException(
                         sprintf('Cannot check "%s" attribute of the association type', $key)
@@ -673,9 +674,9 @@ class FixturesContext extends BaseFixturesContext
         foreach ($table->getHash() as $data) {
             $group = $this->getProductGroup($data['code']);
 
-            assertEquals($data['label-en_US'], $group->getTranslation('en_US')->getLabel());
-            assertEquals($data['label-fr_FR'], $group->getTranslation('fr_FR')->getLabel());
-            assertEquals($data['type'], $group->getType()->getCode());
+            Assert::assertEquals($data['label-en_US'], $group->getTranslation('en_US')->getLabel());
+            Assert::assertEquals($data['label-fr_FR'], $group->getTranslation('fr_FR')->getLabel());
+            Assert::assertEquals($data['type'], $group->getType()->getCode());
 
             if ($group->getType()->isVariant()) {
                 $attributes = [];
@@ -684,7 +685,7 @@ class FixturesContext extends BaseFixturesContext
                 }
                 asort($attributes);
                 $attributes = implode(',', $attributes);
-                assertEquals($data['axis'], $attributes);
+                Assert::assertEquals($data['axis'], $attributes);
             }
         }
     }
@@ -954,9 +955,9 @@ class FixturesContext extends BaseFixturesContext
             foreach ($table->getHash() as $price) {
                 $productPrice = $productValue->getPrice($price['currency']);
                 if ('' === trim($price['amount'])) {
-                    assertEquals(null, $productPrice ? $productPrice->getData() : $productPrice);
+                    Assert::assertEquals(null, $productPrice ? $productPrice->getData() : $productPrice);
                 } else {
-                    assertEquals($price['amount'], $productPrice->getData());
+                    Assert::assertEquals($price['amount'], $productPrice->getData());
                 }
             }
         }
@@ -976,7 +977,7 @@ class FixturesContext extends BaseFixturesContext
             $value      = $this->getProductValue($identifier, strtolower($attribute));
             $actualCode = $value instanceof OptionValueInterface && $value->getData()
                 ? $value->getData()->getCode() : null;
-            assertEquals($optionCode, $actualCode);
+            Assert::assertEquals($optionCode, $actualCode);
         }
     }
 
@@ -1009,9 +1010,9 @@ class FixturesContext extends BaseFixturesContext
             );
             $values = array_filter($values);
 
-            assertEquals(count($values), count($options));
+            Assert::assertEquals(count($values), count($options));
             foreach ($values as $value) {
-                assertContains(
+                Assert::assertContains(
                     $value,
                     $optionCodes,
                     sprintf('"%s" does not contain "%s"', implode(', ', $optionCodes), $value)
@@ -1035,10 +1036,10 @@ class FixturesContext extends BaseFixturesContext
             $media        = $productValue->getData();
             if ('' === trim($filename)) {
                 if ($media) {
-                    assertNull($media->getOriginalFilename());
+                    Assert::assertNull($media->getOriginalFilename());
                 }
             } else {
-                assertEquals($filename, $media->getOriginalFilename());
+                Assert::assertEquals($filename, $media->getOriginalFilename());
             }
         }
     }
@@ -1055,7 +1056,7 @@ class FixturesContext extends BaseFixturesContext
         $this->getMainContext()->getSubcontext('hook')->clearUOW();
         foreach ($this->listToArray($products) as $identifier) {
             $productValue = $this->getProductValue($identifier, strtolower($attribute));
-            assertEquals($data, $productValue->getData()->getData());
+            Assert::assertEquals($data, $productValue->getData()->getData());
         }
     }
 
@@ -1107,7 +1108,7 @@ class FixturesContext extends BaseFixturesContext
     {
         $total = count($this->getProductRepository()->findAll());
 
-        assertEquals($expectedTotal, $total);
+        Assert::assertEquals($expectedTotal, $total);
     }
 
     /**
@@ -1119,7 +1120,7 @@ class FixturesContext extends BaseFixturesContext
     {
         $total = count($this->getAttributeRepository()->findAll());
 
-        assertEquals($expectedTotal, $total);
+        Assert::assertEquals($expectedTotal, $total);
     }
 
     /**
@@ -1133,7 +1134,7 @@ class FixturesContext extends BaseFixturesContext
         $repository = $this->getSmartRegistry()->getRepository($class);
         $total      = count($repository->findAll());
 
-        assertEquals($expectedTotal, $total);
+        Assert::assertEquals($expectedTotal, $total);
     }
 
     /**
@@ -1160,14 +1161,14 @@ class FixturesContext extends BaseFixturesContext
                 $productValue  = $product->getValue($attributeCode, $localeCode, $scopeCode);
 
                 if ('' === $value) {
-                    assertEmpty((string) $productValue);
+                    Assert::assertEmpty((string) $productValue);
                 } elseif ('media' === $attribute->getBackendType()) {
                     // media filename is auto generated during media handling and cannot be guessed
                     // (it contains a timestamp)
                     if ('**empty**' === $value) {
-                        assertEmpty((string) $productValue);
+                        Assert::assertEmpty((string) $productValue);
                     } else {
-                        assertTrue(
+                        Assert::assertTrue(
                             null !== $productValue->getData() &&
                             false !== strpos($productValue->getData()->getOriginalFilename(), $value)
                         );
@@ -1178,11 +1179,11 @@ class FixturesContext extends BaseFixturesContext
                     // example: 180.00 EUR, 220.00 USD
 
                     $price = $productValue->getPrice($priceCurrency);
-                    assertEquals($value, $price->getData());
+                    Assert::assertEquals($value, $price->getData());
                 } elseif ('date' === $attribute->getBackendType()) {
-                    assertEquals($value, $productValue->getData()->format('Y-m-d'));
+                    Assert::assertEquals($value, $productValue->getData()->format('Y-m-d'));
                 } else {
-                    assertEquals($value, (string) $productValue);
+                    Assert::assertEquals($value, (string) $productValue);
                 }
             }
 
@@ -1212,7 +1213,7 @@ class FixturesContext extends BaseFixturesContext
             }
         }
 
-        assertEquals([], $filter->filter($this->getProduct($identifier), $values));
+        Assert::assertEquals([], $filter->filter($this->getProduct($identifier), $values));
     }
 
     /**
@@ -1229,7 +1230,7 @@ class FixturesContext extends BaseFixturesContext
         if (!$family) {
             throw new \Exception(sprintf('Product "%s" doesn\'t have a family', $productCode));
         }
-        assertEquals($familyCode, $family->getCode());
+        Assert::assertEquals($familyCode, $family->getCode());
     }
 
     /**
@@ -1248,7 +1249,7 @@ class FixturesContext extends BaseFixturesContext
                     return $category->getCode();
                 }
             )->toArray();
-            assertEquals($this->listToArray($categoryCodes), $categories);
+            Assert::assertEquals($this->listToArray($categoryCodes), $categories);
 
             return true;
         }, sprintf('Cannot assert that %s categories are %s', $productCode, $categoryCodes));
@@ -1435,7 +1436,7 @@ class FixturesContext extends BaseFixturesContext
     {
         $user = $this->getUser($username);
         $this->refresh($user);
-        assertEquals($user->getUiLocale()->getLanguage(), $locale);
+        Assert::assertEquals($user->getUiLocale()->getLanguage(), $locale);
     }
 
     /**
@@ -1514,7 +1515,7 @@ class FixturesContext extends BaseFixturesContext
     {
         $requirement = $this->getAttributeRequirement($attribute, $family, $channel);
 
-        assertNotNull($requirement);
+        Assert::assertNotNull($requirement);
         assertTrue($requirement->isRequired());
     }
 
@@ -1529,8 +1530,8 @@ class FixturesContext extends BaseFixturesContext
     {
         $requirement = $this->getAttributeRequirement($attribute, $family, $channel);
 
-        assertNotNull($requirement);
-        assertFalse($requirement->isRequired());
+        Assert::assertNotNull($requirement);
+        Assert::assertFalse($requirement->isRequired());
     }
 
     /**
@@ -1545,8 +1546,8 @@ class FixturesContext extends BaseFixturesContext
         foreach ($this->getMainContext()->listToArray($attributes) as $attribute) {
             $requirement = $this->getAttributeRequirement($attribute, $family, $channel);
 
-            assertNotNull($requirement);
-            assertFalse($requirement->isRequired());
+            Assert::assertNotNull($requirement);
+            Assert::assertFalse($requirement->isRequired());
         }
     }
 
@@ -1655,7 +1656,7 @@ class FixturesContext extends BaseFixturesContext
      */
     public function theProductUpdatedDateShouldBeCloseTo(ProductInterface $product, $identifier, $expected)
     {
-        assertLessThan(60, abs(strtotime($expected) - $product->getUpdated()->getTimestamp()));
+        Assert::assertLessThan(60, abs(strtotime($expected) - $product->getUpdated()->getTimestamp()));
     }
 
     /**
@@ -1665,7 +1666,7 @@ class FixturesContext extends BaseFixturesContext
      */
     public function theProductUpdatedDateShouldNotBeCloseTo(ProductInterface $product, $identifier, $expected)
     {
-        assertGreaterThan(60, abs(strtotime($expected) - $product->getUpdated()->getTimestamp()));
+        Assert::assertGreaterThan(60, abs(strtotime($expected) - $product->getUpdated()->getTimestamp()));
     }
 
     /**
@@ -2093,7 +2094,7 @@ class FixturesContext extends BaseFixturesContext
     {
         sort($array1);
         sort($array2);
-        assertEquals(join(', ', $array1), join(', ', $array2));
+        Assert::assertEquals(join(', ', $array1), join(', ', $array2));
     }
 
     /**

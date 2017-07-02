@@ -19,11 +19,6 @@
             "Akeneo\\Test\\Integration\\": "tests/"
         }
     },
-    "autoload-dev": {
-        "files": [
-            "vendor/phpunit/phpunit/src/Framework/Assert/Functions.php"
-        ]
-    },
     "require": {
         "php": ">=7.1.0",
         "ass/xmlsecurity": "1.1.1",

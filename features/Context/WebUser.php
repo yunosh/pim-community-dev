@@ -14,6 +14,7 @@ use Context\Spin\SpinCapableTrait;
 use Context\Spin\SpinException;
 use Context\Spin\TimeoutException;
 use Context\Traits\ClosestTrait;
+use PHPUnit\Framework\Assert;
 use Pim\Behat\Context\PimContext;
 use Pim\Bundle\EnrichBundle\MassEditAction\Operation\BatchableOperationInterface;
 use Pim\Component\Catalog\Model\Product;
@@ -108,13 +109,13 @@ class WebUser extends PimContext
             $currentUrl = explode('|g/', $currentUrl);
             $currentUrl = reset($currentUrl);
 
-            assertTrue(
+            Assert::assertTrue(
                 $url === $currentUrl || $url . '/' === $currentUrl || $url === $currentUrl . '/',
                 sprintf('Expecting the url of page "%s" to be "%s", not "%s"', $data['page'], $url, $currentUrl)
             );
 
             $loadedCorrectly = (bool) $this->getSession()->evaluateScript('return $(\'img[alt="Akeneo"]\').length;');
-            assertTrue($loadedCorrectly, sprintf('Javascript error ocurred on page "%s"', $data['page']));
+            Assert::assertTrue($loadedCorrectly, sprintf('Javascript error ocurred on page "%s"', $data['page']));
         }
     }
 
@@ -186,7 +187,7 @@ class WebUser extends PimContext
      */
     public function iShouldSeeTheTab($tab)
     {
-        assertNotNull($this->getCurrentPage()->getFormTab($tab));
+        Assert::assertNotNull($this->getCurrentPage()->getFormTab($tab));
     }
 
     /**
@@ -220,7 +221,7 @@ class WebUser extends PimContext
      */
     public function iShouldNotSeeTheTab($tab)
     {
-        assertNull($this->getCurrentPage()->getFormTab($tab));
+        Assert::assertNull($this->getCurrentPage()->getFormTab($tab));
     }
 
     /**
@@ -477,7 +478,7 @@ class WebUser extends PimContext
     {
         $this->spin(function () use ($attribute, $position) {
             $actual = $this->getCurrentPage()->getAttributePosition($attribute);
-            assertEquals($position, $actual);
+            Assert::assertEquals($position, $actual);
 
             return true;
         }, sprintf('Cannot assert that %s is at position %s', $attribute, $position));
@@ -1806,7 +1807,7 @@ class WebUser extends PimContext
         $product = $this->getFixturesContext()->getProduct($sku);
 
         $categoryCodes = $product->getCategoryCodes();
-        assertEquals(
+        Assert::assertEquals(
             [$categoryCode],
             $categoryCodes,
             sprintf(
@@ -1970,7 +1971,7 @@ class WebUser extends PimContext
 
         while (false !== $row = fgets($file)) {
             $category = array_shift($categories);
-            assertSame(0, strpos($row, $category), sprintf('Expecting category "%s", saw "%s"', $category, $row));
+            Assert::assertSame(0, strpos($row, $category), sprintf('Expecting category "%s", saw "%s"', $category, $row));
         }
 
         fclose($file);
@@ -2047,7 +2048,7 @@ class WebUser extends PimContext
     public function completenessOfShouldBe($channel, $ratio)
     {
         $actual = $this->getCurrentPage()->getChannelCompleteness($channel);
-        assertEquals(
+        Assert::assertEquals(
             $ratio,
             $actual,
             sprintf(
@@ -2069,7 +2070,7 @@ class WebUser extends PimContext
     public function localizedCompletenessOfShouldBe($lang, $channel, $ratio)
     {
         $actual = $this->getCurrentPage()->getLocalizedChannelCompleteness($channel, $lang);
-        assertEquals(
+        Assert::assertEquals(
             $ratio,
             $actual,
             sprintf(
@@ -2091,7 +2092,7 @@ class WebUser extends PimContext
     {
         $groupNode = $this->getCurrentPage()->getAttributeGroupTab($group);
 
-        assertTrue(
+        Assert::assertTrue(
             $groupNode->hasClass('active'),
             sprintf('Expected to be on attribute group "%s"', $group)
         );
@@ -2390,7 +2391,7 @@ class WebUser extends PimContext
     {
         $headers = $this->getSession()->getResponseHeaders();
 
-        assertTrue(in_array($contentType, $headers['content-type']));
+        Assert::assertTrue(in_array($contentType, $headers['content-type']));
     }
 
     /**
@@ -2610,9 +2611,9 @@ class WebUser extends PimContext
         }, 'Cannot find any select2 items');
 
         if ($items[0]->hasClass('select2-no-results')) {
-            assertEquals((int) $expectedCount, 0);
+            Assert::assertEquals((int) $expectedCount, 0);
         } else {
-            assertEquals((int) $expectedCount, count($items));
+            Assert::assertEquals((int) $expectedCount, count($items));
         }
     }
 
