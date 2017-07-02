@@ -11,8 +11,6 @@ use Pim\Component\Catalog\tests\integration\Normalizer\Standard\AbstractStandard
  */
 class AttributeGroupIntegration extends AbstractStandardNormalizerTestCase
 {
-    protected $purgeDatabaseForEachTest = false;
-
     public function testAttributeGroupWithoutAttribute()
     {
         $expected = [
