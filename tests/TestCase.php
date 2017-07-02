@@ -71,6 +71,9 @@ abstract class TestCase extends KernelTestCase
         $connectionCloser = $this->getConnectionCloser();
         $connectionCloser->closeConnections();
 
+        $this->esClient = null;
+        $this->esConfigurationLoader = null;
+
         parent::tearDown();
     }
 
