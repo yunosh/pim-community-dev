@@ -163,6 +163,7 @@
 
 ### Classes
 
+- Remove class `Pim\Bundle\CatalogBundle\Doctrine\Common\Filter\ObjectIdResolver`
 - Remove class `Pim\Bundle\EnrichBundle\Form\Type\AttributeRequirementType`
 - PIM-6442: Rename `Pim\Bundle\VersioningBundle\Normalizer\Flat\AbstractProductValueDataNormalizer` to `Pim\Bundle\VersioningBundle\Normalizer\Flat\AbstractValueDataNormalizer`
 - PIM-6442: Rename `Pim\Bundle\VersioningBundle\Normalizer\Flat\ProductValueNormalizer` to `Pim\Bundle\VersioningBundle\Normalizer\Flat\ValueNormalizer`
