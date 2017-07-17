@@ -699,3 +699,46 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
         $this->assertProducts($productsFound, ['biker-jacket-polyester-m', 'biker-jacket-leather-m']);
     }
 }
+
+//        $query = [
+//            'query' => [
+//                'bool' => [
+//                    'minimum_should_match' => 1,
+//                    'should'               => [],
+//                ],
+//            ],
+//        ];
+//
+//        $levels = ['_PRODUCT_', self::PRODUCT_MODEL_DOCUMENT_TYPE . '_1', self::PRODUCT_MODEL_DOCUMENT_TYPE . '_2'];
+//        $clauses = [
+//            [
+//                'terms' => [
+//                    'values.size-option.<all_channels>.<all_locales>' => ['s'],
+//                ],
+//            ],
+//            [
+//                'terms' => [
+//                    'values.color-option.<all_channels>.<all_locales>' => ['grey'],
+//                ],
+//            ],
+//        ];
+//
+//        foreach ($levels as $level) {
+//            $newClause = [];
+//            if ($level === '_PRODUCT_') {
+//                $newClause = $clauses;
+//            } else if ($level === self::PRODUCT_MODEL_DOCUMENT_TYPE . '_1') {
+//                foreach($clauses as $clause) {
+//                    $newClause[] = [
+//                        'has_parent' => [
+//                            'type' => self::PRODUCT_MODEL_DOCUMENT_TYPE . '_1',
+//                            'query' => $clause
+//                        ]
+//                    ];
+//                }
+//            } else if ($level === self::PRODUCT_MODEL_DOCUMENT_TYPE . '_2') {
+//
+//            }
+//
+//            $query['query']['bool']['should'][] = $newClause;
+//        }
