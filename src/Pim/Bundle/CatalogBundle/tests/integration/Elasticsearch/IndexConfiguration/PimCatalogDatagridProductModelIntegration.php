@@ -403,6 +403,8 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
      */
     public function testSearchColorGreyAndDescriptionTshirt()
     {
+        $this->getAllClauses([], [], []);
+
         $query = [
             'query' => [
                 'bool' => [
@@ -698,47 +700,135 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
 
         $this->assertProducts($productsFound, ['biker-jacket-polyester-m', 'biker-jacket-leather-m']);
     }
-}
 
-//        $query = [
-//            'query' => [
-//                'bool' => [
-//                    'minimum_should_match' => 1,
-//                    'should'               => [],
-//                ],
-//            ],
-//        ];
-//
-//        $levels = ['_PRODUCT_', self::PRODUCT_MODEL_DOCUMENT_TYPE . '_1', self::PRODUCT_MODEL_DOCUMENT_TYPE . '_2'];
-//        $clauses = [
-//            [
-//                'terms' => [
-//                    'values.size-option.<all_channels>.<all_locales>' => ['s'],
-//                ],
-//            ],
-//            [
-//                'terms' => [
-//                    'values.color-option.<all_channels>.<all_locales>' => ['grey'],
-//                ],
-//            ],
-//        ];
-//
-//        foreach ($levels as $level) {
-//            $newClause = [];
-//            if ($level === '_PRODUCT_') {
-//                $newClause = $clauses;
-//            } else if ($level === self::PRODUCT_MODEL_DOCUMENT_TYPE . '_1') {
-//                foreach($clauses as $clause) {
-//                    $newClause[] = [
-//                        'has_parent' => [
-//                            'type' => self::PRODUCT_MODEL_DOCUMENT_TYPE . '_1',
-//                            'query' => $clause
-//                        ]
-//                    ];
+    /**
+     * @param $attributes
+     * @param $values
+     * @param $levels
+     */
+    protected function getAllClauses($attributes, $values, $levels)
+    {
+        $levels = ['level_1', 'level_2', 'product'];
+        $clauses = [
+            ['attribute' => 'description', 'value' => 'tshirt'],
+            ['attribute' => 'color', 'value' => 'gray'],
+//            ['attribute' => 'bite', 'value' => 'chatte'],
+//            ['attribute' => 'bite1', 'value' => 'chatte1'],
+        ];
+        $query = [
+            'query' => [
+                'bool' => [
+                    'should' => [],
+                ],
+            ],
+        ];
+
+        // Pour chaque niveaux i
+        for ($i = 0; $i < count($levels); $i++) {
+            // pour chaque niveau j
+            for ($j = 0; $j < count($levels); $j++) {
+                // Si ils sont égaux, alors on ajoute toutes les clauses à ce niveau
+//                if ($i === $j) {
+//                    $simpleClauses = [];
+//                    foreach ($clauses as $clause) {
+//                        $simpleClause = $this->getFormattedClause(
+//                            $levels[$i],
+//                            $clause['attribute'],
+//                            $clause['value']
+//                        );
+//                        $query['query']['bool']['should'][] = [
+//                            'bool' => [
+//                                'filter' => $simpleClause,
+//                            ],
+//                        ];
+//                    }
+//                } else {
+                    for ($k = 0; $k < count($clauses); $k++) {
+                        for ($l = $k; $l < count($clauses); $l++) {
+                            if ($k !== $l) {
+                                $query['query']['bool']['should'][] = [
+                                    'bool' => [
+                                        'filter' => [
+                                            $this->getformattedclause($levels[$i], $clauses[$k]['attribute'],
+                                                $clauses[$k]['value']),
+                                            $this->getFormattedClause($levels[$j], $clauses[$l]['attribute'],
+                                                $clauses[$l]['value']),
+                                        ],
+                                    ],
+                                ];
+                            }
+                        }
+                    }
 //                }
-//            } else if ($level === self::PRODUCT_MODEL_DOCUMENT_TYPE . '_2') {
-//
-//            }
-//
-//            $query['query']['bool']['should'][] = $newClause;
-//        }
+            }
+        }
+
+        echo "hello \n";
+        var_dump(count($query['query']['bool']['should']));
+        var_dump(json_encode($query));
+
+        return $query;
+    }
+
+    private function getFormattedClause($level, $attribute, $value)
+    {
+        switch($level) {
+            case 'level_1':
+                return [
+                    'has_parent' => [
+                        'type' => 'pim_catalog_product_mdel_parent_1',
+                        'query' => [
+                            'term' => [
+                                $attribute => $value
+                            ]
+                        ]
+                    ]
+                ];
+                break;
+            case 'level_2':
+                return [
+                    'has_parent' => [
+                        'type'  => 'pim_catalog_product_model_parent_1',
+                        'query' => [
+                            'has_parent' => [
+                                'type'  => 'pim_catalog_product_mdel_parent_2',
+                                'query' => [
+                                    'term' => [
+                                        $attribute => $value,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ];
+                break;
+            case 'product':
+                return [
+                    'term' => [
+                        $attribute => $value,
+                    ],
+                ];
+                break;
+            default:
+                var_dump("bite");
+                break;
+        }
+    }
+
+    protected function get_combinations($arrays)
+    {
+        $result = [[]];
+        foreach ($arrays as $property => $property_values) {
+            $tmp = [];
+            foreach ($result as $result_item) {
+                foreach ($property_values as $property_value) {
+                    $tmp[] = array_merge($result_item, [$property => $property_value]);
+                }
+            }
+            $result = $tmp;
+        }
+
+        return $result;
+    }
+
+}
