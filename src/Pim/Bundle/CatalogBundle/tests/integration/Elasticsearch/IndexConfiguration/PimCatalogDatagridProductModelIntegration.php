@@ -214,85 +214,15 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
         );
     }
 
+    /** @group todo */
     public function testSearchColorGreyAndSizeS()
     {
-        $query = [
-            'query' => [
-                'bool' => [
-                    'minimum_should_match' => 1,
-                    'should'               => [
-                        [
-                            'bool' => [
-                                'filter' => [
-                                    [
-                                        'has_parent' => [
-                                            'type'  => 'pim_catalog_product_model_parent_1',
-                                            'query' => [
-                                                'terms' => [
-                                                    'values.color-option.<all_channels>.<all_locales>' => ['grey'],
-                                                ],
-                                            ],
-                                        ],
-                                    ],
-                                    [
-                                        'terms' => [
-                                            'values.size-option.<all_channels>.<all_locales>' => ['s'],
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                        [
-                            'bool' => [
-                                'filter' => [
-                                    [
-                                        'has_parent' => [
-                                            'type'  => 'pim_catalog_product_model_parent_1',
-                                            'query' => [
-                                                'terms' => [
-                                                    'values.size-option.<all_channels>.<all_locales>' => ['s'],
-                                                ],
-                                            ],
-                                        ],
-                                    ],
-                                    [
-                                        'terms' => [
-                                            'values.color-option.<all_channels>.<all_locales>' => ['grey'],
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                        [
-                            'bool' => [
-                                'filter' => [
-                                    [
-                                        'has_parent' => [
-                                            'type'  => 'pim_catalog_product_model_parent_1',
-                                            'query' => [
-                                                'has_parent' => [
-                                                    'type'  => 'pim_catalog_product_model_parent_2',
-                                                    'query' => [
-                                                        'terms' => [
-                                                            'values.color-option.<all_channels>.<all_locales>' => ['grey'],
-                                                        ],
-                                                    ],
-                                                ],
-                                            ],
-                                        ],
-                                    ],
-                                    [
-                                        'terms' => [
-                                            'values.size-option.<all_channels>.<all_locales>' => ['s'],
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
+        $levels = ['level_1', 'level_2', 'product'];
+        $clauses = [
+            ['attribute' => 'values.color-option.<all_channels>.<all_locales>', 'value' => 'grey'],
+            ['attribute' => 'values.size-option.<all_channels>.<all_locales>', 'value' => 's'],
         ];
+        $query = $this->getAllClauses($levels, $clauses);
 
         $productsFound = $this->getSearchQueryResults(
             $query,
@@ -398,8 +328,6 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
 
     /**
      * Search for a model parent 1 in its values and the value of his parent.
-     *
-     * @group todo
      */
     public function testSearchColorGreyAndDescriptionTshirt()
     {
@@ -706,15 +634,8 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
      * @param $values
      * @param $levels
      */
-    protected function getAllClauses($attributes, $values, $levels)
+    protected function getAllClauses($levels, $clauses)
     {
-        $levels = ['level_1', 'level_2', 'product'];
-        $clauses = [
-            ['attribute' => 'description', 'value' => 'tshirt'],
-            ['attribute' => 'color', 'value' => 'gray'],
-//            ['attribute' => 'bite', 'value' => 'chatte'],
-//            ['attribute' => 'bite1', 'value' => 'chatte1'],
-        ];
         $query = [
             'query' => [
                 'bool' => [
@@ -723,47 +644,27 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
             ],
         ];
 
-        // Pour chaque niveaux i
         for ($i = 0; $i < count($levels); $i++) {
-            // pour chaque niveau j
             for ($j = 0; $j < count($levels); $j++) {
-                // Si ils sont égaux, alors on ajoute toutes les clauses à ce niveau
-//                if ($i === $j) {
-//                    $simpleClauses = [];
-//                    foreach ($clauses as $clause) {
-//                        $simpleClause = $this->getFormattedClause(
-//                            $levels[$i],
-//                            $clause['attribute'],
-//                            $clause['value']
-//                        );
-//                        $query['query']['bool']['should'][] = [
-//                            'bool' => [
-//                                'filter' => $simpleClause,
-//                            ],
-//                        ];
-//                    }
-//                } else {
-                    for ($k = 0; $k < count($clauses); $k++) {
-                        for ($l = $k; $l < count($clauses); $l++) {
-                            if ($k !== $l) {
-                                $query['query']['bool']['should'][] = [
-                                    'bool' => [
-                                        'filter' => [
-                                            $this->getformattedclause($levels[$i], $clauses[$k]['attribute'],
-                                                $clauses[$k]['value']),
-                                            $this->getFormattedClause($levels[$j], $clauses[$l]['attribute'],
-                                                $clauses[$l]['value']),
-                                        ],
+                for ($k = 0; $k < count($clauses); $k++) {
+                    for ($l = $k; $l < count($clauses); $l++) {
+                        if ($k !== $l) {
+                            $query['query']['bool']['should'][] = [
+                                'bool' => [
+                                    'filter' => [
+                                        $this->getformattedclause($levels[$i], $clauses[$k]['attribute'],
+                                            $clauses[$k]['value']),
+                                        $this->getFormattedClause($levels[$j], $clauses[$l]['attribute'],
+                                            $clauses[$l]['value']),
                                     ],
-                                ];
-                            }
+                                ],
+                            ];
                         }
                     }
-//                }
+                }
             }
         }
 
-        echo "hello \n";
         var_dump(count($query['query']['bool']['should']));
         var_dump(json_encode($query));
 
@@ -772,17 +673,17 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
 
     private function getFormattedClause($level, $attribute, $value)
     {
-        switch($level) {
+        switch ($level) {
             case 'level_1':
                 return [
                     'has_parent' => [
-                        'type' => 'pim_catalog_product_mdel_parent_1',
+                        'type'  => 'pim_catalog_product_model_parent_1',
                         'query' => [
                             'term' => [
-                                $attribute => $value
-                            ]
-                        ]
-                    ]
+                                $attribute => $value,
+                            ],
+                        ],
+                    ],
                 ];
                 break;
             case 'level_2':
@@ -791,7 +692,7 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
                         'type'  => 'pim_catalog_product_model_parent_1',
                         'query' => [
                             'has_parent' => [
-                                'type'  => 'pim_catalog_product_mdel_parent_2',
+                                'type'  => 'pim_catalog_product_model_parent_2',
                                 'query' => [
                                     'term' => [
                                         $attribute => $value,
