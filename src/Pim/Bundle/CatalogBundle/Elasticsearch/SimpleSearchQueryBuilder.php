@@ -33,8 +33,76 @@ namespace Pim\Bundle\CatalogBundle\Elasticsearch;
  *
  * @internal This class is used by the ProductQueryBuilder to create an ES search query.
  */
-interface SearchQueryBuilder
+class SimpleSearchQueryBuilder implements SearchQueryBuilder
 {
+    /** @var array */
+    private $mustNotClauses = [];
+
+    /** @var array */
+    private $filterClauses = [];
+
+    /** @var array */
+    private $shouldClauses = [];
+
+    /** @var array */
+    private $sortClauses = [];
+
+    /**
+     * Adds a must_not clause to the query
+     *
+     * @param array $clause
+     *
+     * @return SearchQueryBuilder
+     */
+    public function addMustNot(array $clause)
+    {
+        $this->mustNotClauses[] = $clause;
+
+        return $this;
+    }
+
+    /**
+     * Adds a filter clause to the query
+     *
+     * @param array $clause
+     *
+     * @return SearchQueryBuilder
+     */
+    public function addFilter(array $clause)
+    {
+        $this->filterClauses[] = $clause;
+
+        return $this;
+    }
+
+    /**
+     * Adds a should clause to the query
+     *
+     * @param array $clause
+     *
+     * @return SearchQueryBuilder
+     */
+    public function addShould(array $clause)
+    {
+        $this->shouldClauses[] = $clause;
+
+        return $this;
+    }
+
+    /**
+     * Adds a sort clause to the query
+     *
+     * @param array $sort
+     *
+     * @return $this
+     */
+    public function addSort(array $sort)
+    {
+        $this->sortClauses = array_merge($this->sortClauses, $sort);
+
+        return $this;
+    }
+
     /**
      * Returns an Elastic search Query
      *
@@ -42,5 +110,27 @@ interface SearchQueryBuilder
      *
      * @return array
      */
-    public function getQuery(array $source = []);
+    public function getQuery(array $source = [])
+    {
+        $searchQuery = [];
+
+        if (!empty($this->filterClauses)) {
+            $searchQuery['bool']['filter'] = $this->filterClauses;
+        }
+
+        if (!empty($this->mustNotClauses)) {
+            $searchQuery['bool']['must_not'] = $this->mustNotClauses;
+        }
+
+        if (!empty($this->shouldClauses)) {
+            $searchQuery['bool']['should'] = $this->shouldClauses;
+            $searchQuery['bool']['minimum_should_match'] = 1;
+        }
+
+        if (!empty($this->sortClauses)) {
+            $searchQuery['sort'] = $this->sortClauses;
+        }
+
+        return $searchQuery;
+    }
 }

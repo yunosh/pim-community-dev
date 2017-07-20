@@ -1084,6 +1084,7 @@ class PimCatalogDatagridProductModelIntegration extends AbstractPimCatalogProduc
         );
     }
 
+    /** @group todo */
     public function testSearchMaterialCottonAndColorRed()
     {
         $query = [
