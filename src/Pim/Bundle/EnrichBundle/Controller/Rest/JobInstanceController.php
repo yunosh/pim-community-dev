@@ -12,6 +12,7 @@ use Akeneo\Component\StorageUtils\Remover\RemoverInterface;
 use Akeneo\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Akeneo\Component\StorageUtils\Saver\SaverInterface;
 use Akeneo\Component\StorageUtils\Updater\ObjectUpdaterInterface;
+use Doctrine\ORM\EntityRepository;
 use Oro\Bundle\SecurityBundle\Annotation\AclAncestor;
 use Pim\Bundle\CatalogBundle\Filter\ObjectFilterInterface;
 use Pim\Bundle\EnrichBundle\Provider\Form\FormProviderInterface;
@@ -82,6 +83,18 @@ class JobInstanceController
     /** @var JobInstanceFactory */
     protected $jobInstanceFactory;
 
+    /** @var EntityRepository */
+    protected $userGroupRepository;
+
+    /** @var JobProfileAccessRepository */
+    protected $jobProfileAccessRepository;
+
+    /** @var BulkSaverInterface */
+    protected $jobProfileAccessSaver;
+
+    /** @var JobProfileAccessFactory */
+    protected $jobInstanceAccessFactory;
+
     /**
      * @param IdentifiableObjectRepositoryInterface $repository
      * @param JobRegistry                           $jobRegistry
@@ -99,6 +112,10 @@ class JobInstanceController
      * @param ObjectFilterInterface                 $objectFilter
      * @param NormalizerInterface                   $constraintViolationNormalizer
      * @param JobInstanceFactory                    $jobInstanceFactory
+     * @param EntityRepository                      $userGroupRepository
+     * @param JobProfileAccessRepository            $jobProfileAccessRepository
+     * @param BulkSaverInterface                    $jobProfileAccessSaver
+     * @param JobProfileAccessFactory               $jobInstanceAccessFactory
      */
     public function __construct(
         IdentifiableObjectRepositoryInterface $repository,
@@ -116,24 +133,32 @@ class JobInstanceController
         FormProviderInterface $formProvider,
         ObjectFilterInterface $objectFilter,
         NormalizerInterface $constraintViolationNormalizer,
-        JobInstanceFactory $jobInstanceFactory
+        JobInstanceFactory $jobInstanceFactory,
+        EntityRepository $userGroupRepository,
+        JobProfileAccessRepository $jobProfileAccessRepository,
+        BulkSaverInterface $jobProfileAccessSaver,
+        JobProfileAccessFactory $jobInstanceAccessFactory
     ) {
-        $this->repository            = $repository;
-        $this->jobRegistry           = $jobRegistry;
-        $this->jobInstanceNormalizer = $jobInstanceNormalizer;
-        $this->updater               = $updater;
-        $this->saver                 = $saver;
-        $this->remover               = $remover;
-        $this->validator             = $validator;
-        $this->jobParameterValidator = $jobParameterValidator;
-        $this->jobParamsFactory      = $jobParamsFactory;
-        $this->simpleJobLauncher     = $simpleJobLauncher;
-        $this->tokenStorage          = $tokenStorage;
-        $this->router                = $router;
-        $this->formProvider          = $formProvider;
-        $this->objectFilter          = $objectFilter;
+        $this->repository                    = $repository;
+        $this->jobRegistry                   = $jobRegistry;
+        $this->jobInstanceNormalizer         = $jobInstanceNormalizer;
+        $this->updater                       = $updater;
+        $this->saver                         = $saver;
+        $this->remover                       = $remover;
+        $this->validator                     = $validator;
+        $this->jobParameterValidator         = $jobParameterValidator;
+        $this->jobParamsFactory              = $jobParamsFactory;
+        $this->simpleJobLauncher             = $simpleJobLauncher;
+        $this->tokenStorage                  = $tokenStorage;
+        $this->router                        = $router;
+        $this->formProvider                  = $formProvider;
+        $this->objectFilter                  = $objectFilter;
         $this->constraintViolationNormalizer = $constraintViolationNormalizer;
-        $this->jobInstanceFactory    = $jobInstanceFactory;
+        $this->jobInstanceFactory            = $jobInstanceFactory;
+        $this->userGroupRepository           = $userGroupRepository;
+        $this->jobProfileAccessRepository    = $jobProfileAccessRepository;
+        $this->jobProfileAccessSaver         = $jobProfileAccessSaver;
+        $this->jobProfileAccessFactory       = $jobInstanceAccessFactory;
     }
 
     /**
@@ -518,6 +543,60 @@ class JobInstanceController
     }
 
     /**
+     *
+     */
+    protected function applyPermissions(JobInstance $jobInstance, array $permissions)
+    {
+        $grantedGroups = [];
+        $grantedAccesses = [];
+        $groups = [];
+
+        foreach ($permissions['edit'] as $groupName) {
+            $group = $groups[$groupName] ?? $this->userGroupRepository->findBy(['name' => $groupName]);
+            $grantedAccesses[] = $this->buildGrantAccess($jobInstance, $group, Attributes::EDIT);
+            $grantedGroups[] = $group;
+        }
+
+        foreach ($permissions['execute'] as $groupName) {
+            $group = $groups[$groupName] ?? $this->userGroupRepository->findBy(['name' => $groupName]);
+            // if (!in_array($group, $grantedGroups)) {
+            $grantedAccesses[] = $this->buildGrantAccess($jobInstance, $group, Attributes::EXECUTE);
+            $grantedGroups[] = $group;
+            // }
+        }
+
+        if (null !== $jobInstance->getId()) {
+            $this->jobProfileAccessRepository->revokeAccess($jobProfile, $grantedGroups);
+        }
+
+        $this->saver->saveAll($grantedAccesses);
+    }
+
+    protected function buildGrantAccess(JobInstance $jobInstance, GroupInterface $group, $accessLevel)
+    {
+        $access = $this->jobProfileAccessRepository
+            ->findOneBy(
+                [
+                    'jobProfile' => $jobInstance,
+                    'userGroup'  => $group
+                ]
+            );
+
+        if (null === $access) {
+            $access = $this->jobInstanceAccessFactory->create();
+            $access
+                ->setJobProfile($jobInstance)
+                ->setUserGroup($group);
+        }
+
+        $access
+            ->setExecuteJobProfile($accessLevel === Attributes::EXECUTE)
+            ->setEditJobProfile($accessLevel === Attributes::EDIT);
+
+        return $access;
+    }
+
+    /**
      * Create a job profile with a given type
      *
      * @param Request $request
@@ -549,6 +628,7 @@ class JobInstanceController
         $jobParameters = $this->jobParamsFactory->create($job);
         $jobInstance->setRawParameters($jobParameters->all());
         $this->saver->save($jobInstance);
+        $this->applyPermissions($jobInstance, $data['permissions']);
 
         return new JsonResponse($this->normalizeJobInstance($jobInstance));
     }
