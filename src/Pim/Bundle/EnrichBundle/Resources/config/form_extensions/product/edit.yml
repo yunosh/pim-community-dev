@@ -171,6 +171,13 @@ extensions:
             tabTitle: pim_enrich.form.product.tab.attributes.title
             deletionFailed: pim_enrich.form.product.flash.attribute_deletion_error
 
+    pim-pack:
+        module: pim/enrich/pack
+        parent: pim-product-edit-form-attributes
+        targetZone: self
+        config:
+            name: toto
+
     pim-product-edit-form-categories:
         module: pim/product-edit-form/categories
         parent: pim-product-edit-form-column-tabs

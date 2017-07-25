@@ -24,7 +24,8 @@ define(
         'pim/template/form/tab/attributes',
         'pim/dialog',
         'oro/messenger',
-        'pim/i18n'
+        'pim/i18n',
+        'pim/pack'
     ],
     function (
         $,
@@ -42,7 +43,8 @@ define(
         formTemplate,
         Dialog,
         messenger,
-        i18n
+        i18n,
+        Pack
     ) {
         return BaseForm.extend({
             template: _.template(formTemplate),

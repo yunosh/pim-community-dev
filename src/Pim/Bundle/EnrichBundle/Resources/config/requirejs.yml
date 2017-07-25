@@ -119,6 +119,11 @@ config:
                         urls:
                             list: pim_enrich_attribute_rest_index
                             get: pim_enrich_attribute_rest_get
+                quote:
+                    module: pim/quote-fetcher
+                    options:
+                        urls:
+                            list: oro_config_configuration_system_get
                 attribute-type:
                     module: pim/base-fetcher
                     options:
@@ -497,6 +502,10 @@ config:
                     edit:   pim-attribute-form-textarea
 
     paths:
+        pim/enrich/pack:                           pimenrich/js/pack
+        template/pack:                      pimenrich/js/pack.html
+
+
         pim/app:                            pimenrich/js/app
         pim/router:                         pimenrich/js/router
         pim/route-matcher:                  pimenrich/js/route-matcher
@@ -574,6 +583,7 @@ config:
         pim/fetcher-registry:        pimenrich/js/fetcher/fetcher-registry
         pim/base-fetcher:            pimenrich/js/fetcher/base-fetcher
         pim/attribute-fetcher:       pimenrich/js/fetcher/attribute-fetcher
+        pim/quote-fetcher:           pimenrich/js/quote-fetcher
         pim/attribute-group-fetcher: pimenrich/js/fetcher/attribute-group-fetcher
         pim/locale-fetcher:          pimenrich/js/fetcher/locale-fetcher
         pim/product-fetcher:         pimenrich/js/fetcher/product-fetcher
