@@ -22,3 +22,5 @@ pim_enrich.acl_group.locale:
     order: 100
 pim_enrich.acl_group.product:
     order: 110
+pim_enrich.acl_group.api_connection:
+    order: 120

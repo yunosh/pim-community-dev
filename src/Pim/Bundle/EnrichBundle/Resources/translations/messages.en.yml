@@ -274,6 +274,8 @@ pim_enrich:
             history: View association type history
         job_tracker:
             index: View process tracker
+        api_connection:
+            index: View API connections
 
     acl_group:
         association_type: Association types
@@ -288,6 +290,7 @@ pim_enrich:
         group_type: Group types
         locale: Locales
         product: Products
+        api_connection: API connections
     product_value:
         tooltip:
             from_variant:
