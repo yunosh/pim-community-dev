@@ -24,10 +24,9 @@ parameters:
 services:
     pim_enrich.repository.sequential_edit:
         class: '%pim_enrich.repository.sequential_edit.class%'
-        factory: 'doctrine.orm.entity_manager:getRepository'
-        arguments: ['%pim_enrich.entity.sequential_edit.class%']
-        tags:
-            - { name: 'pim_repository' }
+        arguments:
+            - '@doctrine.orm.entity_manager'
+            - '%pim_enrich.entity.sequential_edit.class%'
 
     ## Searchable repositories
     pim_enrich.repository.family.search:
