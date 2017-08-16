@@ -41,8 +41,13 @@ define(
                     events : {
                         insertParagraph: function (event, editor, layout) {
                             var editable = layout.editable();
-                            editor.pasteHTML(editable, '<br><br>');
-                            event.preventDefault();
+                            var range = editor.createRange(editable);
+                            var splitRoot = $(range.sc).closest('li, p, div, h1, h2, h3, h4, h5, h6');
+
+                            if (!splitRoot.is('li')) {
+                                editor.pasteHTML(editable, '<br><br>');
+                                event.preventDefault();
+                            }
                         }.bind(this)
                     }
                 });
