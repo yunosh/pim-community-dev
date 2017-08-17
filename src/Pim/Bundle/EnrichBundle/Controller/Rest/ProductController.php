@@ -7,7 +7,6 @@ use Akeneo\Component\StorageUtils\Saver\SaverInterface;
 use Akeneo\Component\StorageUtils\Updater\ObjectUpdaterInterface;
 use Oro\Bundle\SecurityBundle\Annotation\AclAncestor;
 use Pim\Bundle\CatalogBundle\Filter\CollectionFilterInterface;
-use Pim\Bundle\CatalogBundle\Filter\ObjectFilterInterface;
 use Pim\Bundle\UserBundle\Context\UserContext;
 use Pim\Component\Catalog\Builder\ProductBuilderInterface;
 use Pim\Component\Catalog\Comparator\Filter\ProductFilterInterface;
@@ -56,9 +55,6 @@ class ProductController
     /** @var UserContext */
     protected $userContext;
 
-    /** @var ObjectFilterInterface */
-    protected $objectFilter;
-
     /** @var CollectionFilterInterface */
     protected $productEditDataFilter;
 
@@ -88,7 +84,6 @@ class ProductController
      * @param NormalizerInterface          $normalizer
      * @param ValidatorInterface           $validator
      * @param UserContext                  $userContext
-     * @param ObjectFilterInterface        $objectFilter
      * @param CollectionFilterInterface    $productEditDataFilter
      * @param RemoverInterface             $productRemover
      * @param ProductBuilderInterface      $productBuilder
@@ -105,7 +100,6 @@ class ProductController
         NormalizerInterface $normalizer,
         ValidatorInterface $validator,
         UserContext $userContext,
-        ObjectFilterInterface $objectFilter,
         CollectionFilterInterface $productEditDataFilter,
         RemoverInterface $productRemover,
         ProductBuilderInterface $productBuilder,
@@ -121,7 +115,6 @@ class ProductController
         $this->normalizer = $normalizer;
         $this->validator = $validator;
         $this->userContext = $userContext;
-        $this->objectFilter = $objectFilter;
         $this->productEditDataFilter = $productEditDataFilter;
         $this->productRemover = $productRemover;
         $this->productBuilder = $productBuilder;
@@ -143,16 +136,7 @@ class ProductController
         $product = $this->findProductOr404($id);
         $this->productBuilder->addMissingAssociations($product);
 
-        $normalizationContext = $this->userContext->toArray() + [
-            'filter_types'               => ['pim.internal_api.product_value.view'],
-            'disable_grouping_separator' => true
-        ];
-
-        $normalizedProduct = $this->normalizer->normalize(
-            $product,
-            'internal_api',
-            $normalizationContext
-        );
+        $normalizedProduct = $this->normalizer->normalize($product, 'internal_api', $this->userContext->toArray());
 
         return new JsonResponse($normalizedProduct);
     }
@@ -176,16 +160,7 @@ class ProductController
         if (0 === $violations->count()) {
             $this->productSaver->save($product);
 
-            $normalizationContext = $this->userContext->toArray() + [
-                'filter_types'               => ['pim.internal_api.product_value.view'],
-                'disable_grouping_separator' => true
-            ];
-
-            return new JsonResponse($this->normalizer->normalize(
-                $product,
-                'internal_api',
-                $normalizationContext
-            ));
+            return new JsonResponse($this->normalizer->normalize($product, 'internal_api', $this->userContext->toArray()));
         }
 
         $normalizedViolations = [];
@@ -212,9 +187,6 @@ class ProductController
     public function postAction(Request $request, $id)
     {
         $product = $this->findProductOr404($id);
-        if ($this->objectFilter->filterObject($product, 'pim.internal_api.product.edit')) {
-            throw new AccessDeniedHttpException();
-        }
         $data = json_decode($request->getContent(), true);
         try {
             $data = $this->productEditDataFilter->filterCollection($data, null, ['product' => $product]);
@@ -229,16 +201,7 @@ class ProductController
         if (0 === $violations->count()) {
             $this->productSaver->save($product);
 
-            $normalizationContext = $this->userContext->toArray() + [
-                'filter_types'               => ['pim.internal_api.product_value.view'],
-                'disable_grouping_separator' => true
-            ];
-
-            $normalizedProduct = $this->normalizer->normalize(
-                $product,
-                'internal_api',
-                $normalizationContext
-            );
+            $normalizedProduct = $this->normalizer->normalize($product, 'internal_api', $this->userContext->toArray());
 
             return new JsonResponse($normalizedProduct);
         }
@@ -289,10 +252,6 @@ class ProductController
     public function removeAttributeAction($id, $attributeId)
     {
         $product = $this->findProductOr404($id);
-        if ($this->objectFilter->filterObject($product, 'pim.internal_api.product.edit')) {
-            throw new AccessDeniedHttpException();
-        }
-
         $attribute = $this->findAttributeOr404($attributeId);
 
         if (!$product->isAttributeRemovable($attribute)) {
@@ -321,9 +280,8 @@ class ProductController
     protected function findProductOr404($id)
     {
         $product = $this->productRepository->find($id);
-        $product = $this->objectFilter->filterObject($product, 'pim.internal_api.product.view') ? null : $product;
 
-        if (!$product) {
+        if (null === $product) {
             throw new NotFoundHttpException(
                 sprintf('Product with id %s could not be found.', $id)
             );

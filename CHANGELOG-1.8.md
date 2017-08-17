@@ -266,7 +266,7 @@
     `Pim\Component\Catalog\Manager\CompletenessManager`,
     `Doctrine\Common\Persistence\ObjectManager`,
     `Pim\Component\Catalog\Repository\ChannelRepositoryInterface`,
-    `Pim\Bundle\CatalogBundle\Filter\CollectionFilterInterface` and
+    `Pim\Bundle\CatalogBundle\Filter\ObjectFilterInterface` and
     `$storageDriver`, and add `Pim\Component\Catalog\Completeness\CompletenessCalculatorInterface`
 - Change the constructor of `Pim\Component\Connector\Writer\File\ProductColumnSorter` to replace `Akeneo\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface` by `Pim\Bundle\CatalogBundle\Doctrine\ORM\Repository\AttributeRepositoryInterface`
 - Change the constructor of `Pim\Component\Catalog\Updater\VariantGroupUpdater` to replace `Pim\Component\Catalog\BuilderProductBuilderInterface` and `Akeneo\Component\StorageUtils\Updater\ObjectUpdaterInterface`

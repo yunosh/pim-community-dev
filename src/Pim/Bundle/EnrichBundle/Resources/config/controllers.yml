@@ -333,7 +333,6 @@ services:
             - '@pim_internal_api_serializer'
             - '@pim_catalog.validator.product'
             - '@pim_user.context.user'
-            - '@pim_catalog.filter.chained'
             - '@pim_enrich.filter.product_edit_data'
             - '@pim_catalog.remover.product'
             - '@pim_catalog.builder.product'
