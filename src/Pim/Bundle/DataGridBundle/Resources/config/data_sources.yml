@@ -117,8 +117,9 @@ services:
         class: '%pim_datagrid.datasource.product.class%'
         arguments:
             - '@pim_catalog.object_manager.product'
-            - '@pim_catalog.query.product_query_builder_from_size_factory'
+            - '@pim_enrich.query.product_and_product_model_query_builder_from_size_factory'
             - '@pim_datagrid.normalizer.product'
+            - '@pim_datagrid.normalizer.product_model'
         calls:
             - [ setMassActionRepository, ['@pim_catalog.repository.product_mass_action'] ]
         tags:

@@ -5,6 +5,8 @@ namespace Pim\Bundle\DataGridBundle\Datasource;
 use Doctrine\Common\Persistence\ObjectManager;
 use Oro\Bundle\DataGridBundle\Datasource\ResultRecord;
 use Pim\Bundle\DataGridBundle\Extension\Pager\PagerExtension;
+use Pim\Component\Catalog\Model\ProductInterface;
+use Pim\Component\Catalog\Model\ProductModelInterface;
 use Pim\Component\Catalog\Query\ProductQueryBuilderFactoryInterface;
 use Pim\Component\Catalog\Query\ProductQueryBuilderInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
@@ -25,21 +27,27 @@ class ProductDatasource extends Datasource
     protected $factory;
 
     /** @var NormalizerInterface */
-    protected $normalizer;
+    protected $productNormalizer;
+
+    /** @var NormalizerInterface */
+    protected $productModelNormalizer;
 
     /**
      * @param ObjectManager                       $om
      * @param ProductQueryBuilderFactoryInterface $factory
-     * @param NormalizerInterface                 $normalizer
+     * @param NormalizerInterface                 $productNormalizer
+     * @param NormalizerInterface                 $productModelNormalizer
      */
     public function __construct(
         ObjectManager $om,
         ProductQueryBuilderFactoryInterface $factory,
-        NormalizerInterface $normalizer
+        NormalizerInterface $productNormalizer,
+        NormalizerInterface $productModelNormalizer = null
     ) {
         $this->om = $om;
         $this->factory = $factory;
-        $this->normalizer = $normalizer;
+        $this->productNormalizer = $productNormalizer;
+        $this->productModelNormalizer = $productModelNormalizer;
     }
 
     /**
@@ -57,11 +65,19 @@ class ProductDatasource extends Datasource
         ];
         $rows = ['totalRecords' => $productCursor->count(), 'data' => []];
 
-        foreach ($productCursor as $product) {
-            $normalizedProduct = array_merge(
-                $this->normalizer->normalize($product, 'datagrid', $context),
-                ['id' => $product->getId(), 'dataLocale' => $this->getParameters()['dataLocale']]
-            );
+        foreach ($productCursor as $productXOrProductModel) {
+            if ($productXOrProductModel instanceof ProductInterface) {
+                $normalizedProduct = array_merge(
+                    $this->productNormalizer->normalize($productXOrProductModel, 'datagrid', $context),
+                    ['id' => $productXOrProductModel->getId(), 'dataLocale' => $this->getParameters()['dataLocale']]
+                );
+            } elseif (null !== $this->productModelNormalizer &&
+                $productXOrProductModel instanceof ProductModelInterface) {
+                $normalizedProduct = array_merge(
+                    $this->productModelNormalizer->normalize($productXOrProductModel, 'datagrid', $context),
+                    ['id' => $productXOrProductModel->getId(), 'dataLocale' => $this->getParameters()['dataLocale']]
+                );
+            }
             $rows['data'][] = new ResultRecord($normalizedProduct);
         }
 

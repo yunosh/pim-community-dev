@@ -38,7 +38,7 @@ class ProductAndProductModelQueryBuilder implements ProductQueryBuilderInterface
      */
     public function addSorter($field, $direction, array $context = [])
     {
-        return $this->pqb->addFilter($field, $direction, $context);
+        return $this->pqb->addSorter($field, $direction, $context);
     }
 
     /**

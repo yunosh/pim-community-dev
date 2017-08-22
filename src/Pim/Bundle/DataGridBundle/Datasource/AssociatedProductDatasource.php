@@ -277,7 +277,7 @@ class AssociatedProductDatasource extends ProductDatasource
             $context['is_associated'] = in_array($product->getIdentifier(), $associatedProductsIdentifiers);
 
             $normalizedProduct = array_merge(
-                $this->normalizer->normalize($product, 'datagrid', $context),
+                $this->productNormalizer->normalize($product, 'datagrid', $context),
                 [
                     'id'         => $product->getId(),
                     'dataLocale' => $dataLocale,

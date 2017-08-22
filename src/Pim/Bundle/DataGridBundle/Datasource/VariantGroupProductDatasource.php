@@ -23,16 +23,16 @@ class VariantGroupProductDatasource extends ProductDatasource
     /**
      * @param ObjectManager                       $om
      * @param ProductQueryBuilderFactoryInterface $factory
-     * @param NormalizerInterface                 $normalizer
+     * @param NormalizerInterface                 $productNormalizer
      * @param GroupRepositoryInterface            $groupRepository
      */
     public function __construct(
         ObjectManager $om,
         ProductQueryBuilderFactoryInterface $factory,
-        NormalizerInterface $normalizer,
+        NormalizerInterface $productNormalizer,
         GroupRepositoryInterface $groupRepository
     ) {
-        parent::__construct($om, $factory, $normalizer);
+        parent::__construct($om, $factory, $productNormalizer);
 
         $this->groupRepository = $groupRepository;
     }
