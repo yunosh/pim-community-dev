@@ -18,9 +18,6 @@ class ProductEditDataFilter implements CollectionFilterInterface
     /** @var SecurityFacade */
     protected $securityFacade;
 
-    /** @var CollectionFilterInterface */
-    protected $productValuesFilter;
-
     /** @var array */
     protected $acls = [
         'family'       => 'pim_enrich_product_change_family',
@@ -30,19 +27,15 @@ class ProductEditDataFilter implements CollectionFilterInterface
     ];
 
     /**
-     * @param SecurityFacade            $securityFacade
-     * @param CollectionFilterInterface $productValuesFilter
+     * @param SecurityFacade $securityFacade
      */
-    public function __construct(
-        SecurityFacade $securityFacade,
-        CollectionFilterInterface $productValuesFilter
-    ) {
+    public function __construct(SecurityFacade $securityFacade)
+    {
         $this->securityFacade = $securityFacade;
-        $this->productValuesFilter = $productValuesFilter;
     }
 
     /**
-     * Filter product data according to edit permissions
+     * Filter product data according to ACL edit permissions
      *
      * {@inheritdoc}
      */
@@ -53,7 +46,7 @@ class ProductEditDataFilter implements CollectionFilterInterface
 
         foreach ($collection as $type => $data) {
             if ($this->isAllowed($product, $type)) {
-                $newProductData[$type] = $this->filterData($type, $data);
+                $newProductData[$type] = $data;
             }
         }
 
@@ -66,23 +59,6 @@ class ProductEditDataFilter implements CollectionFilterInterface
     public function supportsCollection($collection, $type, array $options = [])
     {
         return false;
-    }
-
-    /**
-     * Filter & return the given $data for the given $type
-     *
-     * @param string $type
-     * @param mixed  $data
-     *
-     * @return mixed
-     */
-    protected function filterData($type, $data)
-    {
-        if ('values' === $type) {
-            $data = $this->productValuesFilter->filterCollection($data, 'pim.internal_api.product_values_data.edit');
-        }
-
-        return $data;
     }
 
     /**

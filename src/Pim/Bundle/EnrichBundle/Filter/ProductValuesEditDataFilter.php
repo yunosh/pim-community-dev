@@ -64,6 +64,7 @@ class ProductValuesEditDataFilter implements CollectionFilterInterface
      */
     public function filterCollection($valuesData, $type, array $options = [])
     {
+        return $valuesData;
         $filteredValues = [];
         foreach ($valuesData as $attributeCode => $values) {
             $attribute = $this->getAttribute($attributeCode);
