@@ -67,12 +67,11 @@ define(
          * @property
          */
         className: function () {
-            var name = 'AknFilterBox filter-box oro-clearfix-width';
             if (true !== this.filtersAsColumn()) {
-                name += ' AknFilterBox--search';
+                return 'AknFilterBox--search';
             }
 
-            return name;
+            return '';
         },
 
         /**
