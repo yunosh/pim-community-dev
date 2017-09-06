@@ -58,7 +58,7 @@ extensions:
             logout: pim_menu.user.logout
 
     pim-product-index-grid-filters-manager:
-        module: oro/datafilter/filters-manager
+        module: oro/datafilter/collection-filters-manager
         parent: pim-product-index
         targetZone: filters
         position: 10

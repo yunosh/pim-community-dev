@@ -91,7 +91,6 @@ define(
                 options.collection = this.collection;
                 options.displayManageFilters = _.result(this.metadata.options, 'manageFilters', true);
                 options.filtersAsColumn = _.result(this.metadata.options, 'filtersAsColumn', false);
-
                 mediator.trigger('datagrid_filters:loaded', options);
             },
 

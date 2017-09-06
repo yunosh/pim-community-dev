@@ -1,6 +1,6 @@
 /* global define */
-define(['underscore', 'oro/datafilter/filters-manager'],
-function(_, FiltersManager) {
+define(['underscore', 'oro/datafilter/filters-manager', 'oro/mediator'],
+function(_, FiltersManager, mediator) {
     'use strict';
 
     /**
@@ -19,23 +19,28 @@ function(_, FiltersManager) {
          * @param {Object} [options.filters]
          * @param {String} [options.addButtonHint]
          */
-        initialize: function(options) {
-            this.collection = options.collection;
+        initialize: function() {
+            mediator.on('datagrid_filters:loaded', options => {
+                this.collection = options.collection;
+                this.collection.on('beforeFetch', this._beforeCollectionFetch, this);
+                this.collection.on('updateState', this._onUpdateCollectionState, this);
+                this.collection.on('reset', this._onCollectionReset, this);
 
-            this.collection.on('beforeFetch', this._beforeCollectionFetch, this);
-            this.collection.on('updateState', this._onUpdateCollectionState, this);
-            this.collection.on('reset', this._onCollectionReset, this);
+                FiltersManager.prototype.initialize.call(this, options);
 
-            FiltersManager.prototype.initialize.apply(this, arguments);
+                this.render();
+
+                mediator.trigger('datagrid_filters:rendered', this.collection);
+                mediator.trigger('datagrid_filters:build.post', this);
+            });
         },
 
         /**
          * Triggers when filter is updated
          *
-         * @param {oro.filter.AbstractFilter} filter
          * @protected
          */
-        _onFilterUpdated: function(filter) {
+        _onFilterUpdated: function() {
             if (this.ignoreFiltersUpdateEvents) {
                 return;
             }

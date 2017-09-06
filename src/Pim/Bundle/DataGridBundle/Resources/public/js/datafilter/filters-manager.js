@@ -24,7 +24,7 @@ define(
      *
      * @export  oro/datafilter/filters-manager
      * @class   oro.datafilter.FiltersManager
-     * @extends Backbone.View
+     * @extends BaseForm
      *
      * @event updateList    on update of filter list
      * @event updateFilter  on update data of specific filter
@@ -95,18 +95,6 @@ define(
         events: {
             'change #add-filter-select': '_onChangeFilterSelect'
         },
-
-        /**
-         * Initialize filter list options
-         *
-         * @param {Object} options
-         * @param {Object} [options.filters]
-         * @param {Boolean} [options.displayManageFilters]
-         */
-        // initialize: function () {
-        //     console.log('render:datagrid_filters:loaded', options.filters)
-
-        // },
 
         /**
          * Triggers when filter is updated
@@ -242,32 +230,35 @@ define(
             return this;
         },
 
-        initialize() {
-            mediator.on('datagrid_filters:loaded', options => {
-                this.options = options;
-                this.filters = options.filters;
+        /**
+         * Initialize filter list options
+         *
+         * @param {Object} options
+         * @param {Object} [options.filters]
+         * @param {Boolean} [options.displayManageFilters]
+         */
+        initialize(options) {
+            this.options = options;
+            this.filters = options.filters;
 
-                if (!options.filtersAsColumn) {
-                    this.className = 'AknFilterBox--search';
-                }
+            if (!options.filtersAsColumn) {
+                this.className = 'AknFilterBox--search';
+            }
 
-                this.render();
+            _.each(this.filters, function (filter) {
+                this.listenTo(filter, 'update', this._onFilterUpdated);
+                this.listenTo(filter, 'disable', this._onFilterDisabled);
+            }, this);
 
+            BaseForm.prototype.initialize.apply(this, arguments);
+
+            // destroy events bindings
+            mediator.once('hash_navigation_request:start', function () {
                 _.each(this.filters, function (filter) {
-                    this.listenTo(filter, 'update', this._onFilterUpdated);
-                    this.listenTo(filter, 'disable', this._onFilterDisabled);
+                    this.stopListening(filter, 'update', this._onFilterUpdated);
+                    this.stopListening(filter, 'disable', this._onFilterDisabled);
                 }, this);
-
-                Backbone.View.prototype.initialize.apply(this, arguments);
-
-                // destroy events bindings
-                mediator.once('hash_navigation_request:start', function () {
-                    _.each(this.filters, function (filter) {
-                        this.stopListening(filter, 'update', this._onFilterUpdated);
-                        this.stopListening(filter, 'disable', this._onFilterDisabled);
-                    }, this);
-                }, this);
-            });
+            }, this);
         },
 
         /**
