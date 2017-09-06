@@ -6,7 +6,8 @@ define(
         'backbone',
         'oro/mediator',
         'oro/multiselect-decorator',
-        'pim/template/datagrid/add-filter-select'
+        'pim/template/datagrid/add-filter-select',
+        'pim/form'
     ],
     function(
         __,
@@ -15,7 +16,8 @@ define(
         Backbone,
         mediator,
         MultiselectDecorator,
-        addFilterSelectTemplate
+        addFilterSelectTemplate,
+        BaseForm
     ) {
     /**
      * View that represents all grid filters
@@ -28,7 +30,7 @@ define(
      * @event updateFilter  on update data of specific filter
      * @event disableFilter on disable specific filter
      */
-    return Backbone.View.extend({
+    return BaseForm.extend({
         /**
          * List of filter objects
          *
@@ -59,19 +61,6 @@ define(
          */
         filtersAsColumn: function() {
             return _.result(this.options, 'filtersAsColumn', false);
-        },
-
-        /**
-         * Container classes
-         *
-         * @property
-         */
-        className: function () {
-            if (true !== this.filtersAsColumn()) {
-                return 'AknFilterBox--search';
-            }
-
-            return '';
         },
 
         /**
@@ -114,26 +103,10 @@ define(
          * @param {Object} [options.filters]
          * @param {Boolean} [options.displayManageFilters]
          */
-        initialize: function (options) {
-            if (options.filters) {
-                this.filters = options.filters;
-            }
+        // initialize: function () {
+        //     console.log('render:datagrid_filters:loaded', options.filters)
 
-            _.each(this.filters, function (filter) {
-                this.listenTo(filter, 'update', this._onFilterUpdated);
-                this.listenTo(filter, 'disable', this._onFilterDisabled);
-            }, this);
-
-            Backbone.View.prototype.initialize.apply(this, arguments);
-
-            // destroy events bindings
-            mediator.once('hash_navigation_request:start', function () {
-                _.each(this.filters, function (filter) {
-                    this.stopListening(filter, 'update', this._onFilterUpdated);
-                    this.stopListening(filter, 'disable', this._onFilterDisabled);
-                }, this);
-            }, this);
-        },
+        // },
 
         /**
          * Triggers when filter is updated
@@ -269,6 +242,34 @@ define(
             return this;
         },
 
+        initialize() {
+            mediator.on('datagrid_filters:loaded', options => {
+                this.options = options;
+                this.filters = options.filters;
+
+                if (!options.filtersAsColumn) {
+                    this.className = 'AknFilterBox--search';
+                }
+
+                this.render();
+
+                _.each(this.filters, function (filter) {
+                    this.listenTo(filter, 'update', this._onFilterUpdated);
+                    this.listenTo(filter, 'disable', this._onFilterDisabled);
+                }, this);
+
+                Backbone.View.prototype.initialize.apply(this, arguments);
+
+                // destroy events bindings
+                mediator.once('hash_navigation_request:start', function () {
+                    _.each(this.filters, function (filter) {
+                        this.stopListening(filter, 'update', this._onFilterUpdated);
+                        this.stopListening(filter, 'disable', this._onFilterDisabled);
+                    }, this);
+                }, this);
+            });
+        },
+
         /**
          * Render filter list
          *
@@ -292,20 +293,19 @@ define(
 
             this.trigger('rendered');
 
-            if (_.isEmpty(this.filters)) {
-                this.$el.hide();
-            } else {
-                if (this.displayManageFilters()) {
-                    this.$el.append(this.addButtonTemplate(
-                        {
-                            filters: this.filters,
-                            systemFilterGroup: __('system_filter_group')
-                        }
-                    ));
-                }
-                this.$el.append(fragment);
-                this._initializeSelectWidget();
+            if (this.displayManageFilters()) {
+                this.$el.append(this.addButtonTemplate(
+                    {
+                        filters: this.filters,
+                        systemFilterGroup: __('system_filter_group')
+                    }
+                ));
             }
+            this.$el.append(fragment);
+            this._initializeSelectWidget();
+
+            mediator.trigger('datagrid_filters:build.post', this);
+            mediator.trigger('datagrid_filters:rendered', this.options.collection);
 
             return this;
         },

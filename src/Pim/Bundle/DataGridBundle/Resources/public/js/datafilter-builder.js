@@ -91,15 +91,8 @@ define(
                 options.collection = this.collection;
                 options.displayManageFilters = _.result(this.metadata.options, 'manageFilters', true);
                 options.filtersAsColumn = _.result(this.metadata.options, 'filtersAsColumn', false);
-                var filtersList = new FiltersManager(options);
 
-                this.$el.append(filtersList.render().$el);
-
-                mediator.trigger('datagrid_filters:rendered', this.collection);
-                if (this.collection.length === 0) {
-                    filtersList.$el.hide();
-                }
-                mediator.trigger('datagrid_filters:build.post', filtersList);
+                mediator.trigger('datagrid_filters:loaded', options);
             },
 
             /**

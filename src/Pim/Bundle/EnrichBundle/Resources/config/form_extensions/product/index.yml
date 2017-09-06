@@ -57,10 +57,17 @@ extensions:
             userAccount: pim_menu.user.user_account
             logout: pim_menu.user.logout
 
+    pim-product-index-grid-filters-manager:
+        module: oro/datafilter/filters-manager
+        parent: pim-product-index
+        targetZone: filters
+        position: 10
+
     pim-product-index-grid-filters:
         module: oro/datafilter-builder
         parent: pim-product-index
         targetZone: filters
+        position: 20
 
     pim-product-index-grid:
         module: pim/grid/table
