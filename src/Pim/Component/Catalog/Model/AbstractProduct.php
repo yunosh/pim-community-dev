@@ -6,6 +6,7 @@ use Akeneo\Component\Classification\Model\CategoryInterface as BaseCategoryInter
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Pim\Component\Catalog\AttributeTypes;
+use Pim\Component\Catalog\Event\DomainEvent;
 use Pim\Component\Catalog\Event\Product\ChangedFamilyEvent;
 use Pim\Component\Catalog\Event\ClassifiedEvent;
 use Pim\Component\Catalog\Event\Product\DefinedFamilyEvent;
@@ -745,13 +746,27 @@ abstract class AbstractProduct implements ProductInterface
         return $this;
     }
 
-    public function registerEvent($event)
+    /**
+     * {@inheritdoc}
+     */
+    public function registerEvent(DomainEvent $event)
     {
         $this->events[] = $event;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getEvents()
     {
         return $this->events;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function clearEvents()
+    {
+        $this->events = [];
     }
 }

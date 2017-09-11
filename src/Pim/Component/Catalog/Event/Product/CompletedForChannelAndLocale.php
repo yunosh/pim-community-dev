@@ -2,13 +2,20 @@
 
 namespace Pim\Component\Catalog\Event\Product;
 
+use Pim\Component\Catalog\Event\DomainEvent;
 use Pim\Component\Catalog\Model\ChannelInterface;
 use Pim\Component\Catalog\Model\LocaleInterface;
 use Pim\Component\Catalog\Model\ProductInterface;
 use Pim\Component\Catalog\Validator\Constraints\Locale;
-use Symfony\Component\EventDispatcher\Event;
 
-class CompletedForChannelAndLocale extends Event
+/**
+ * The product has been completed on a channel - locale scope
+ *
+ * @author    Nicolas Dupont <nicolas@akeneo.com>
+ * @copyright 2017 Akeneo SAS (http://www.akeneo.com)
+ * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+class CompletedForChannelAndLocale extends DomainEvent
 {
     /** @var ProductInterface */
     private $product;

@@ -65,19 +65,19 @@ class CategoryFieldSetter extends AbstractFieldSetter
             $newCategories[] = $category;
         }
 
-        $oldCategories = $product->getCategories();
+        $oldCategories = $entity->getCategories();
         $oldCategoriesAsArray = $oldCategories->toArray();
         foreach ($oldCategories as $category) {
-            $product->removeCategory($category);
+            $entity->removeCategory($category);
             if (!in_array($category, $newCategories)) {
-                $product->registerEvent(new UnclassifiedEvent($product, $category));
+                $entity->registerEvent(new UnclassifiedEvent($entity, $category));
             }
         }
 
         foreach ($newCategories as $category) {
-            $product->addCategory($category);
+            $entity->addCategory($category);
             if (!in_array($category, $oldCategoriesAsArray)) {
-                $product->registerEvent(new ClassifiedEvent($product, $category));
+                $entity->registerEvent(new ClassifiedEvent($entity, $category));
             }
         }
     }

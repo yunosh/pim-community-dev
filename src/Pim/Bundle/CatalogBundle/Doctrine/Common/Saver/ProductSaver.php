@@ -116,6 +116,7 @@ class ProductSaver implements SaverInterface, BulkSaverInterface
         }
 
         $this->eventDispatcher->dispatch(StorageEvents::POST_SAVE, new GenericEvent($product, $options));
+        $product->clearEvents();
     }
 
     /**
@@ -150,15 +151,17 @@ class ProductSaver implements SaverInterface, BulkSaverInterface
         $this->objectManager->flush();
 
         foreach ($products as $product) {
-
             foreach ($product->getEvents() as $event) {
                 $this->eventDispatcher->dispatch(get_class($event), $event);
             }
-
             $this->eventDispatcher->dispatch(StorageEvents::POST_SAVE, new GenericEvent($product, $options));
         }
 
         $this->eventDispatcher->dispatch(StorageEvents::POST_SAVE_ALL, new GenericEvent($products, $options));
+
+        foreach ($products as $product) {
+            $product->clearEvents();
+        }
     }
 
     /**

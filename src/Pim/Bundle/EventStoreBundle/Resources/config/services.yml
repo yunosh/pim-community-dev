@@ -7,6 +7,7 @@ services:
         arguments:
           - '@logger'
           - '@pim_user.context.user'
+          - '@pim_catalog.normalizer.standard.product.product_value'
         tags:
             - { name: kernel.event_subscriber }
             - { name: monolog.logger, channel: eventstore }

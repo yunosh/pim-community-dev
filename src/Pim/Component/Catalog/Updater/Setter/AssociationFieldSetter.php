@@ -7,6 +7,10 @@ use Akeneo\Component\StorageUtils\Exception\InvalidPropertyException;
 use Akeneo\Component\StorageUtils\Exception\InvalidPropertyTypeException;
 use Akeneo\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Pim\Component\Catalog\Builder\ProductBuilderInterface;
+use Pim\Component\Catalog\Event\Product\AssociatedToAGroupEvent;
+use Pim\Component\Catalog\Event\Product\AssociatedToAProductEvent;
+use Pim\Component\Catalog\Event\Product\UnassociatedToAGroupEvent;
+use Pim\Component\Catalog\Event\Product\UnassociatedToAProductEvent;
 use Pim\Component\Catalog\Model\AssociationInterface;
 use Pim\Component\Catalog\Model\EntityWithValuesInterface;
 use Pim\Component\Catalog\Model\ProductInterface;
@@ -69,9 +73,10 @@ class AssociationFieldSetter extends AbstractFieldSetter
         }
 
         $this->checkData($field, $data);
-        $this->clearAssociations($entity, $data);
-        $this->addMissingAssociations($entity);
-        $this->setProductsAndGroupsToAssociations($entity, $data);
+        $currentAssociations = $this->getCurrentAssociationsAsArray($product, $data);
+        $this->clearAssociations($product, $data);
+        $this->addMissingAssociations($product);
+        $this->setProductsAndGroupsToAssociations($product, $data, $currentAssociations);
     }
 
     /**
@@ -133,10 +138,12 @@ class AssociationFieldSetter extends AbstractFieldSetter
      * Set products and groups to associations
      *
      * @param ProductInterface $product
+     * @param array            $data
+     * @param array            $currentAssociations
      *
      * @throws InvalidPropertyException
      */
-    protected function setProductsAndGroupsToAssociations(ProductInterface $product, $data)
+    protected function setProductsAndGroupsToAssociations(ProductInterface $product, array $data, array $currentAssociations)
     {
         foreach ($data as $typeCode => $items) {
             $association = $product->getAssociationForTypeCode($typeCode);
@@ -150,22 +157,30 @@ class AssociationFieldSetter extends AbstractFieldSetter
                 );
             }
             if (isset($items['products'])) {
-                $this->setAssociatedProducts($association, $items['products']);
+                $currentAssociatedProducts = isset($currentAssociations[$typeCode]) ?
+                    $currentAssociations[$typeCode]['products'] : [];
+                $this->setAssociatedProducts($association, $items['products'], $currentAssociatedProducts);
             }
             if (isset($items['groups'])) {
-                $this->setAssociatedGroups($association, $items['groups']);
+                $currentAssociatedGroups = isset($currentAssociations[$typeCode]) ?
+                    $currentAssociations[$typeCode]['groups'] : [];
+                $this->setAssociatedGroups($association, $items['groups'], $currentAssociatedGroups);
             }
         }
     }
 
     /**
      * @param AssociationInterface $association
-     * @param array                $productsIdentifiers
+     * @param array $productsIdentifiers
+     * @param array $currentAssociatedProducts
      *
      * @throws InvalidPropertyException
      */
-    protected function setAssociatedProducts(AssociationInterface $association, $productsIdentifiers)
-    {
+    protected function setAssociatedProducts(
+        AssociationInterface $association,
+        array $productsIdentifiers,
+        array $currentAssociatedProducts
+    ) {
         foreach ($productsIdentifiers as $productIdentifier) {
             $associatedProduct = $this->productRepository->findOneByIdentifier($productIdentifier);
             if (null === $associatedProduct) {
@@ -178,17 +193,43 @@ class AssociationFieldSetter extends AbstractFieldSetter
                 );
             }
             $association->addProduct($associatedProduct);
+            if (!in_array($productIdentifier, $currentAssociatedProducts)) {
+                $association->getOwner()->registerEvent(
+                    new AssociatedToAProductEvent(
+                        $association->getOwner(),
+                        $associatedProduct,
+                        $association->getAssociationType()
+                    )
+                );
+            }
+        }
+
+        foreach ($currentAssociatedProducts as $associatedProduct) {
+            if (!in_array($associatedProduct, $productsIdentifiers)) {
+                $removedProduct = $this->productRepository->findOneByIdentifier($productIdentifier);
+                $association->getOwner()->registerEvent(
+                    new UnassociatedToAProductEvent(
+                        $association->getOwner(),
+                        $removedProduct,
+                        $association->getAssociationType()
+                    )
+                );
+            }
         }
     }
 
     /**
      * @param AssociationInterface $association
      * @param array                $groupsCodes
+     * @param array                $currentAssociatedGroups
      *
      * @throws InvalidPropertyException
      */
-    protected function setAssociatedGroups(AssociationInterface $association, $groupsCodes)
-    {
+    protected function setAssociatedGroups(
+        AssociationInterface $association,
+        array $groupsCodes,
+        array $currentAssociatedGroups
+    ) {
         foreach ($groupsCodes as $groupCode) {
             $associatedGroup = $this->groupRepository->findOneByIdentifier($groupCode);
             if (null === $associatedGroup) {
@@ -201,6 +242,28 @@ class AssociationFieldSetter extends AbstractFieldSetter
                 );
             }
             $association->addGroup($associatedGroup);
+            if (!in_array($groupCode, $currentAssociatedGroups)) {
+                $association->getOwner()->registerEvent(
+                    new AssociatedToAGroupEvent(
+                        $association->getOwner(),
+                        $associatedGroup,
+                        $association->getAssociationType()
+                    )
+                );
+            }
+        }
+
+        foreach ($currentAssociatedGroups as $associatedGroupCode) {
+            if (!in_array($associatedGroupCode, $groupsCodes)) {
+                $removedGroup = $this->groupRepository->findOneByIdentifier($associatedGroupCode);
+                $association->getOwner()->registerEvent(
+                    new UnassociatedToAGroupEvent(
+                        $association->getOwner(),
+                        $removedGroup,
+                        $association->getAssociationType()
+                    )
+                );
+            }
         }
     }
 
@@ -290,5 +353,40 @@ class AssociationFieldSetter extends AbstractFieldSetter
                 );
             }
         }
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @return array
+     *
+     * Expected data output format :
+     * {
+     *     "XSELL": {
+     *         "groups": ["group1", "group2"],
+     *         "products": ["AKN_TS1", "AKN_TSH2"]
+     *     },
+     *     "UPSELL": {
+     *         "groups": ["group3", "group4"],
+     *         "products": ["AKN_TS3", "AKN_TSH4"]
+     *     },
+     * }
+     */
+    private function getCurrentAssociationsAsArray(ProductInterface $product)
+    {
+        $currentAssociations = [];
+        foreach ($product->getAssociations() as $association) {
+            $currentAssociations[$association->getAssociationType()->getCode()]= [
+                'groups' => [],
+                'products' => []
+            ];
+            foreach ($association->getProducts() as $product) {
+                $currentAssociations[$association->getAssociationType()->getCode()]['products'][]= $product->getIdentifier();
+            }
+            foreach ($association->getGroups() as $group) {
+                $currentAssociations[$association->getAssociationType()->getCode()]['groups'][]= $group->getCode();
+            }
+        }
+
+        return $currentAssociations;
     }
 }

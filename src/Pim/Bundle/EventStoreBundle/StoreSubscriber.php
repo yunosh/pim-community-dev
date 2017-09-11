@@ -2,9 +2,9 @@
 
 namespace Pim\Bundle\EventStoreBundle;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Pim\Bundle\UserBundle\Context\UserContext;
+use Pim\Component\Catalog\Event\Product\AssociatedToAGroupEvent;
+use Pim\Component\Catalog\Event\Product\AssociatedToAProductEvent;
 use Pim\Component\Catalog\Event\Product\ChangedFamilyEvent;
 use Pim\Component\Catalog\Event\Product\ClassifiedEvent;
 use Pim\Component\Catalog\Event\Product\CompletedForChannelAndLocale;
@@ -16,11 +16,15 @@ use Pim\Component\Catalog\Event\Product\DisabledEvent;
 use Pim\Component\Catalog\Event\Product\EnabledEvent;
 use Pim\Component\Catalog\Event\Product\FulfilledExistingValueEvent;
 use Pim\Component\Catalog\Event\Product\FulfilledNewValueEvent;
+use Pim\Component\Catalog\Event\Product\UnassociatedToAGroupEvent;
+use Pim\Component\Catalog\Event\Product\UnassociatedToAProductEvent;
 use Pim\Component\Catalog\Event\Product\UnclassifiedEvent;
 use Pim\Component\Catalog\Event\Product\UncompletedForChannelAndLocale;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizableInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 /**
  * Listen, enrich and store domain events
@@ -40,10 +44,14 @@ class StoreSubscriber implements EventSubscriberInterface
     /** @var UserContext */
     private $userContext;
 
-    public function __construct(LoggerInterface $logger, UserContext $userContext)
+    /** @var NormalizableInterface */
+    private $valueNormalizer;
+
+    public function __construct(LoggerInterface $logger, UserContext $userContext, NormalizerInterface $valueNormalizer)
     {
         $this->logger = $logger;
         $this->userContext = $userContext;
+        $this->valueNormalizer = $valueNormalizer;
     }
 
     /**
@@ -65,6 +73,10 @@ class StoreSubscriber implements EventSubscriberInterface
             UncompletedForChannelAndLocale::class => 'store',
             EnabledEvent::class => 'store',
             DisabledEvent::class => 'store',
+            AssociatedToAProductEvent::class => 'store',
+            AssociatedToAGroupEvent::class => 'store',
+            UnassociatedToAProductEvent::class => 'store',
+            UnassociatedToAGroupEvent::class => 'store',
         ];
     }
 
@@ -73,14 +85,14 @@ class StoreSubscriber implements EventSubscriberInterface
      */
     public function store(Event $event)
     {
-        // TODO: to be extracted in event enricher
-
+        // TODO: meta can be extracted in a or several dedicated event enricher
         $message = [
             'type' => get_class($event),
             'aggregate' => 'product',
             'aggregate_id' => $event->getProduct()->getId(),
             'data' => [],
-            'metadata' => ['username' => $this->getUsername()]
+            'metadata' => ['username' => $this->getUsername()],
+            // TODO add timestamp
         ];
         if (method_exists($event, 'getLocale')) {
             $message['data']['locale']= $event->getLocale()->getCode();
@@ -89,16 +101,7 @@ class StoreSubscriber implements EventSubscriberInterface
             $message['data']['channel']= $event->getChannel()->getCode();
         }
         if (method_exists($event, 'getValue')) {
-            $valueData = $event->getValue()->getData();
-            if ($valueData instanceof Collection) {
-                $normalizedData = [];
-                foreach ($valueData as $item) {
-                    $normalizedData[] = (string) $item;
-                }
-            } else {
-                $normalizedData = (string) $valueData;
-            }
-            $message['data']['value']= $normalizedData;
+            $message['data']['value']= $this->valueNormalizer->normalize($event->getValue());
         }
         if (method_exists($event, 'getFamily')) {
             $message['data']['family']= (string)$event->getFamily()->getCode();
@@ -107,7 +110,16 @@ class StoreSubscriber implements EventSubscriberInterface
             $message['data']['category']= (string)$event->getCategory()->getCode();
         }
         if (method_exists($event, 'getIdentifier')) {
-            $message['data']['value']= (string)$event->getIdentifier()->getData();
+            $message['data']['identifier']= $this->valueNormalizer->normalize($event->getIdentifier());
+        }
+        if (method_exists($event, 'getAssociatedProduct')) {
+            $message['data']['associated_product_identifier']= $event->getAssociatedProduct()->getIdentifier();
+        }
+        if (method_exists($event, 'getAssociatedGroup')) {
+            $message['data']['associated_group_code']= $event->getAssociatedGroup()->getCode();
+        }
+        if (method_exists($event, 'getAssociationType')) {
+            $message['data']['association_type']= $event->getAssociationType()->getCode();
         }
 
         $this->logger->info(json_encode($message), []);
