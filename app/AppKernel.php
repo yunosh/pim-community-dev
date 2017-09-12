@@ -97,6 +97,7 @@ class AppKernel extends Kernel
             new Pim\Bundle\VersioningBundle\PimVersioningBundle(),
 
             new Pim\Bundle\EventStoreBundle\PimEventStoreBundle(),
+            new Pim\Bundle\ReportingBundle\PimReportingBundle(),
         ];
     }
 

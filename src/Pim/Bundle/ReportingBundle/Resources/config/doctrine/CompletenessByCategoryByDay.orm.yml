@@ -1,0 +1,35 @@
+Pim\Bundle\ReportingBundle\Entity\CompletenessByCategoryByDay:
+    type: entity
+    table: pim_reporting_completeness_by_category_by_day
+    changeTrackingPolicy: DEFERRED_EXPLICIT
+    fields:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+        day:
+            type: datetime
+            column: day
+            nullable: false
+        categoryCode:
+            type: string
+            length: 255
+            column: category_code
+            nullable: false
+        channelCode:
+            type: string
+            length: 255
+            column: channel_code
+            nullable: false
+        localeCode:
+            type: string
+            length: 255
+            column: locale_code
+            nullable: false
+        completedProducts:
+            type: integer
+            column: completed_products
+        totalProducts:
+            type: integer
+            column: total_products
