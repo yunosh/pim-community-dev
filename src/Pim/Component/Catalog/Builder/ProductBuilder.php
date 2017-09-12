@@ -92,7 +92,7 @@ class ProductBuilder implements ProductBuilderInterface
         }
 
         $identifierValue = $product->getValue($identifierAttribute->getCode(), null, null);
-        if (null !== $familyCode) {
+        if (null !== $familyCode && '' !== $familyCode) {
             $family = $this->familyRepository->findOneByIdentifier($familyCode);
             $product->setFamily($family);
             $this->addBooleanToProduct($product);

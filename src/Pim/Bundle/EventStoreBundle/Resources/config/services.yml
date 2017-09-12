@@ -1,13 +1,20 @@
 parameters:
+    pim_event_store.event_subscriber.event_repository.class: Pim\Bundle\EventStoreBundle\Entity\EventRepository
     pim_event_store.event_subscriber.store.class: Pim\Bundle\EventStoreBundle\StoreSubscriber
 
 services:
+    pim_event_store.event_subscriber.event_repository:
+        class: '%pim_event_store.event_subscriber.event_repository.class%'
+        arguments:
+          - '@doctrine.orm.entity_manager'
+
     pim_event_store.event_subscriber.index_products:
         class: '%pim_event_store.event_subscriber.store.class%'
         arguments:
           - '@logger'
           - '@pim_user.context.user'
           - '@pim_catalog.normalizer.standard.product.product_value'
+          - '@pim_event_store.event_subscriber.event_repository'
         tags:
             - { name: kernel.event_subscriber }
             - { name: monolog.logger, channel: eventstore }

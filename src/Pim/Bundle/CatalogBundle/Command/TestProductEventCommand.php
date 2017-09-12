@@ -73,18 +73,26 @@ class TestProductEventCommand extends ContainerAwareCommand
             return -1;
         }
 
-
-        // issues / questions:
+        // NOTES:
         // - collect all the domain events, inside the product model is the ideal place for this
         // - however, we want to collect only the events representing the user intent, sadly we need to be closer to
         //   updater, etc internal api because of our anemic models and the use of setters, the real intent may be
         //   already lost in the model. for instance, when a product is classified in 3 categories and i unclassify it
         //   from one, our setter start to unclassify from all category before to classify in in 2 and we get 5 domain
         //   events even if the only intent of the user was to unclassify from a single category
-        // - does the event should contains models like, Product, Family, etc or only codes (could be uuid later)?
+
+        // WARNING: we can plug on these events only in case of same transaction changes for changes that are part of
+        // the domain, this is not integration events
+        // cf https://blogs.msdn.microsoft.com/cesardelatorre/2017/02/07/domain-events-vs-integration-events-in-domain-driven-design-and-microservices-architectures/
 
         // TODO:
-        // - domain event must be immutable (use id and not models)
+        // As domain event must be immutable it could be better to use id and not models to avoid models changes during the transaction,
+        // for instance, if i put the Product in a domain event and we want to store the product identifier in the event store and
+        // meanwhile the identifier is changed by another event, the data that will store will not be exact
+
+        // - does the event should contains models like, Product, Family, etc or only codes (could be uuid later)?
+
+        // take a look at http://getprooph.org/
 
         var_dump($product->getRawValues());
         var_dump($product->getFamily()->getCode());

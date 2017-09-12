@@ -1,0 +1,33 @@
+Pim\Bundle\EventStoreBundle\Entity\Event:
+    type: entity
+    table: pim_eventstore_event
+    changeTrackingPolicy: DEFERRED_EXPLICIT
+    fields:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+        createdAt:
+            type: datetime
+            column: created_at
+            nullable: false
+        aggregate:
+            type: string
+            length: 255
+            column: aggregate
+            nullable: false
+        aggregateId:
+            type: integer
+            column: aggregate_id
+        type:
+            type: string
+            length: 255
+            column: type
+            nullable: false
+        data:
+            type: json_array
+            column: data
+        metadata:
+            type: json_array
+            column: metadata

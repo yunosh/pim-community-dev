@@ -2,6 +2,7 @@
 
 namespace Pim\Bundle\EventStoreBundle;
 
+use Pim\Bundle\EventStoreBundle\Entity\EventRepository;
 use Pim\Bundle\UserBundle\Context\UserContext;
 use Pim\Component\Catalog\Event\Product\AssociatedToAGroupEvent;
 use Pim\Component\Catalog\Event\Product\AssociatedToAProductEvent;
@@ -47,11 +48,19 @@ class StoreSubscriber implements EventSubscriberInterface
     /** @var NormalizableInterface */
     private $valueNormalizer;
 
-    public function __construct(LoggerInterface $logger, UserContext $userContext, NormalizerInterface $valueNormalizer)
-    {
+    /** @var EventRepository */
+    private $repository;
+
+    public function __construct(
+        LoggerInterface $logger,
+        UserContext $userContext,
+        NormalizerInterface $valueNormalizer,
+        EventRepository $repository
+    ) {
         $this->logger = $logger;
         $this->userContext = $userContext;
         $this->valueNormalizer = $valueNormalizer;
+        $this->repository = $repository;
     }
 
     /**
@@ -87,12 +96,12 @@ class StoreSubscriber implements EventSubscriberInterface
     {
         // TODO: meta can be extracted in a or several dedicated event enricher
         $message = [
+            'created_at' => new \DateTime(),
             'type' => get_class($event),
             'aggregate' => 'product',
             'aggregate_id' => $event->getProduct()->getId(),
             'data' => [],
-            'metadata' => ['username' => $this->getUsername()],
-            // TODO add timestamp
+            'metadata' => ['username' => $this->getUsername(), 'version' => 1],
         ];
         if (method_exists($event, 'getLocale')) {
             $message['data']['locale']= $event->getLocale()->getCode();
@@ -101,7 +110,7 @@ class StoreSubscriber implements EventSubscriberInterface
             $message['data']['channel']= $event->getChannel()->getCode();
         }
         if (method_exists($event, 'getValue')) {
-            $message['data']['value']= $this->valueNormalizer->normalize($event->getValue());
+            $message['data']['value']= $this->valueNormalizer->normalize($event->getValue(), 'standard');
         }
         if (method_exists($event, 'getFamily')) {
             $message['data']['family']= (string)$event->getFamily()->getCode();
@@ -123,6 +132,17 @@ class StoreSubscriber implements EventSubscriberInterface
         }
 
         $this->logger->info(json_encode($message), []);
+
+        $this->repository->add(
+            new \Pim\Bundle\EventStoreBundle\Entity\Event(
+                $message['created_at'],
+                $message['aggregate'],
+                $message['aggregate_id'],
+                $message['type'],
+                $message['data'],
+                $message['metadata']
+            )
+        );
     }
 
     /**
