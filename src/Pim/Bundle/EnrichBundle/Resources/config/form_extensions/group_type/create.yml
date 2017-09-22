@@ -8,7 +8,7 @@ extensions:
            successMessage: pim_enrich.entity.group_type.message.created
            editRoute: pim_enrich_grouptype_edit
            postUrl: pim_enrich_grouptype_rest_create
-           routerKey: code
+           modelKey: code
 
     pim-group-type-create-form:
        module: pim/form/common/creation/field

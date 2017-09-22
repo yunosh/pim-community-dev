@@ -22,8 +22,8 @@ define([
         },
 
         /**
-     * {@inheritdoc}
-     */
+         * {@inheritdoc}
+         */
         initialize: function(config) {
             this.config = config.config;
             this.identifier = this.config.identifier || 'code';
@@ -32,15 +32,15 @@ define([
         },
 
         /**
-     * Model update callback
-     */
+         * Model update callback
+         */
         updateModel: function(event) {
             this.getFormModel().set(this.identifier, event.target.value || '');
         },
 
         /**
-     * {@inheritdoc}
-     */
+         * {@inheritdoc}
+         */
         render: function() {
             if (!this.configured)
                 this;

@@ -48,7 +48,8 @@ define(
             render() {
                 this.$el.html(this.template({
                     titleLabel: __(this.config.labels.title),
-                    subTitleLabel: __(this.config.labels.subTitle)
+                    subTitleLabel: __(this.config.labels.subTitle),
+                    fields: null
                 }));
 
                 this.renderExtensions();
@@ -108,7 +109,7 @@ define(
                     let routerParams = {};
 
                     if (this.config.routerKey) {
-                        routerParams[this.config.routerKey] = entity[this.config.routerKey];
+                        routerParams[this.config.routerKey] = entity[this.config.modelKey || this.config.routerKey];
                     } else {
                         routerParams = {id: entity.meta.id};
                     }
@@ -155,7 +156,7 @@ define(
 
                 return $.ajax({
                     url: Routing.generate(this.config.postUrl),
-                    type: 'POST',
+                    type: (undefined === this.config.method) ? 'POST' : this.config.method,
                     data: JSON.stringify(data)
                 }).fail(function (response) {
                     const errors = response.responseJSON ?

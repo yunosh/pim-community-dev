@@ -8,7 +8,7 @@ extensions:
             successMessage: pim_enrich.entity.association_type.message.created
             editRoute: pim_enrich_associationtype_edit
             postUrl: pim_enrich_associationtype_rest_create
-            routerKey: code
+            modelKey: code
 
     pim-association-type-create-form:
         module: pim/form/common/creation/field

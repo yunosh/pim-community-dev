@@ -384,6 +384,7 @@ pim_enrich:
                 url: URL
         attribute_group:
             info:
+                create_successfull: Attribute group successfully created
                 update_failed: Attribute group could not be updated
                 update_successful: Attribute group successfully updated
         api_connection:

@@ -52,12 +52,13 @@ define(
                 }));
 
                 if (this.config.modalForm) {
-                    this.$el.on('click', function () {
+                    this.$el.on('click', () => {
                         FormBuilder.build(this.config.modalForm)
-                            .then(function (modal) {
+                            .then((modal) => {
+                                modal.setData(this.getEmptyData());
                                 modal.open();
                             })
-                    }.bind(this));
+                    });
 
                     return this;
                 }
@@ -66,6 +67,15 @@ define(
                 this.dialog = new DialogForm('#create-button-extension');
 
                 return this;
+            },
+
+            /**
+             * Returns an empty object. This method can be overriden.
+             *
+             * @returns Object
+             */
+            getEmptyData() {
+                return {};
             }
         });
     });

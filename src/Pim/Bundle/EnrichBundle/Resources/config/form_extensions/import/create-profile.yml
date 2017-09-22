@@ -8,7 +8,7 @@ extensions:
             successMessage: pim_enrich.index.import_profiles.message.created
             editRoute: pim_importexport_import_profile_edit
             postUrl: pim_enrich_job_instance_rest_import_create
-            routerKey: code
+            modelKey: code
 
     pim-import-profile-create-code:
         module: pim/form/common/creation/field

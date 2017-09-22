@@ -677,6 +677,7 @@ config:
 
         # Attribute group
         pim/attribute-group-form/tab/attribute: pimenrich/js/attribute-group/form/tab/attribute
+        pim/attribute-group-form/create-button: pimenrich/js/attribute-group/create-button
 
         # Exports
         pim/job/product/edit/content/readonly:                       pimenrich/js/job/product/edit/content/readonly
