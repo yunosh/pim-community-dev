@@ -6,6 +6,7 @@
 - PIM-6567: Fix attributes filter to not remove axes
 - PIM-6933: Fix menu display in case of acl restriction
 - PIM-6922: fix sort order on attribute groups
+- TIP-818: Add missing integration tests for index commands
 
 ## Better manage products with variants!
 
