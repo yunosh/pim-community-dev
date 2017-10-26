@@ -20,17 +20,20 @@ class IndexProductModelsCommandIntegration extends AbstractIndexCommandIntegrati
     public function testIndexesAllProductModelsAndTheirDescendants(): void
     {
         $this->assertIndexesEmpty();
-        $this->runIndexProductModelsCommand();
-        $this->assertIndexesNotEmpty(['akeneo_pim_product_model', 'akeneo_pim_product_and_product_model']);
+        $exitCode = $this->runIndexProductModelsCommand();
+        $this->assertExitCodeSuccess($exitCode);
+        $this->assertProductModelIndexNotEmpty();
+        $this->assertProductAndProductModelIndexNotEmpty();
     }
 
     public function testIndexesProductModelsAndTheirDescendantsWithIdentifiers(): void
     {
         $this->assertIndexesEmpty();
         $this->runIndexProductModelsCommand(['model-braided-hat', 'model-tshirt-divided']);
-        $this->assertIndexesNotEmpty(['akeneo_pim_product_model', 'akeneo_pim_product_and_product_model']);
-        $this->assertIndexesCount(5, ['akeneo_pim_product_model']);
-        $this->assertIndexesCount(19, ['akeneo_pim_product_and_product_model']);
+        $this->assertProductModelIndexNotEmpty();
+        $this->assertProductAndProductModelIndexNotEmpty();
+        $this->assertProductModelIndexCount(5);
+        $this->assertProductAndProductModelIndexCount(19);
     }
 
     /**
@@ -54,12 +57,12 @@ class IndexProductModelsCommandIntegration extends AbstractIndexCommandIntegrati
     /**
      * Runs the index product command.
      */
-    private function runIndexProductModelsCommand(array $productModelIdentifiers = []): void
+    private function runIndexProductModelsCommand(array $productModelIdentifiers = []): int
     {
         $options = $this->getIndexCommandOptions($productModelIdentifiers);
         $commandLauncher = new CommandLauncher($this->testKernel);
-        $exitCode = $commandLauncher->execute('pim:product-model:index', null, $options);
-        $this->assertSame(0, $exitCode);
+
+        return $commandLauncher->execute('pim:product-model:index', null, $options);
     }
 
     /**
@@ -75,5 +78,64 @@ class IndexProductModelsCommandIntegration extends AbstractIndexCommandIntegrati
         }
 
         return $options;
+    }
+
+    /**
+     * asserts that the index of product models is not empty
+     */
+    private function assertProductModelIndexNotEmpty()
+    {
+        $allDocuments = $this->get('akeneo_elasticsearch.client.product_model')->search(
+            'pim_catalog_product',
+            [
+                'query' => [
+                    'match_all' => new \StdClass(),
+                ],
+            ]
+        );
+        $this->assertNotCount(0, $allDocuments['hits']['hits']);
+    }
+
+    /**
+     * Checks whether the given indexes name are not empty, if none given will check that all registered indexes in the
+     * PIM are not empty.
+     *
+     * @param int   $count
+     * @param array $indexesName
+     */
+    protected function assertIndexesCount(int $count, array $indexesName = []): void
+    {
+        $esClients = $this->get('akeneo_elasticsearch.registry.clients')->getClients();
+
+        foreach ($esClients as $esClient) {
+            if (!in_array($esClient->getIndexName(), $indexesName) && !empty($indexesName)) {
+                continue;
+            }
+
+            $allDocuments = $esClient->search('pim_catalog_product', [
+                '_source' => 'identifier',
+                'query'   => [
+                    'match_all' => new \StdClass(),
+                ],
+            ]);
+            $this->assertEquals($count, $allDocuments['hits']['total']);
+        }
+    }
+
+    /**
+     * @param int $count
+     */
+    protected function assertProductModelIndexCount(int $count): void
+    {
+        $allDocuments = $this->get('akeneo_elasticsearch.client.product_model')->search(
+            'pim_catalog_product',
+            [
+                '_source' => 'identifier',
+                'query'   => [
+                    'match_all' => new \StdClass(),
+                ],
+            ]
+        );
+        $this->assertEquals($count, $allDocuments['hits']['total']);
     }
 }

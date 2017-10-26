@@ -21,15 +21,18 @@ class IndexProductsCommandIntegration extends AbstractIndexCommandIntegration
     {
         $this->assertIndexesEmpty();
         $this->runIndexProductsCommand();
-        $this->assertIndexesNotEmpty(['akeneo_pim_product', 'akeneo_pim_product_and_product_model']);
+        $this->assertProductIndexNotEmpty();
+        $this->assertProductAndProductModelIndexNotEmpty();
     }
 
     public function testIndexesProductsWithIdentifiers(): void
     {
         $this->assertIndexesEmpty();
         $this->runIndexProductsCommand(['watch', '1111111319']);
-        $this->assertIndexesNotEmpty(['akeneo_pim_product', 'akeneo_pim_product_and_product_model']);
-        $this->assertIndexesCount(2, ['akeneo_pim_product', 'akeneo_pim_product_and_product_model']);
+        $this->assertProductIndexNotEmpty();
+        $this->assertProductAndProductModelIndexNotEmpty();
+        $this->assertProductIndexCount(2);
+        $this->assertProductAndProductModelIndexCount(2);
     }
 
     /**
@@ -74,5 +77,38 @@ class IndexProductsCommandIntegration extends AbstractIndexCommandIntegration
         }
 
         return $options;
+    }
+
+    /**
+     * assert the product index is not empty
+     */
+    private function assertProductIndexNotEmpty()
+    {
+        $allDocuments = $this->get('akeneo_elasticsearch.client.product')->search(
+            'pim_catalog_product',
+            [
+                'query' => [
+                    'match_all' => new \StdClass(),
+                ],
+            ]
+        );
+        $this->assertNotCount(0, $allDocuments['hits']['hits']);
+    }
+
+    /**
+     * @param int   $count
+     */
+    protected function assertProductIndexCount(int $count): void
+    {
+        $allDocuments = $this->get('akeneo_elasticsearch.client.product')->search(
+            'pim_catalog_product',
+            [
+                '_source' => 'identifier',
+                'query'   => [
+                    'match_all' => new \StdClass(),
+                ],
+            ]
+        );
+        $this->assertEquals($count, $allDocuments['hits']['total']);
     }
 }

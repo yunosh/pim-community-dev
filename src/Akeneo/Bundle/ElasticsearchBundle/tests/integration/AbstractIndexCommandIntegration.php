@@ -17,28 +17,30 @@ abstract class AbstractIndexCommandIntegration extends TestCase
     /**
      * Resets all ES indexes registered in the PIM.
      */
-    protected function runResetIndexesCommand(): void
+    protected function runResetIndexesCommand(): int
     {
         $commandLauncher = new CommandLauncher($this->testKernel);
         $exitCode = $commandLauncher->execute('akeneo:elasticsearch:reset-indexes', null, ['inputs' => ['yes']]);
+
+        return $exitCode;
+    }
+
+    /**
+     * @param int $exitCode
+     */
+    protected function assertExitCodeSuccess(int $exitCode)
+    {
         $this->assertSame(0, $exitCode);
     }
 
     /**
-     * Checks wether the given indexes name are not empty, if none given will check that all registered indexes in the
-     * PIM are not empty.
-     *
-     * @param array $indexesName
+     * Checks that all registered indexes in the PIM are not empty.
      */
-    protected function assertIndexesNotEmpty(array $indexesName = []): void
+    protected function assertAllRegisteredIndexesNotEmpty(): void
     {
         $esClients = $this->get('akeneo_elasticsearch.registry.clients')->getClients();
 
         foreach ($esClients as $esClient) {
-            if (!in_array($esClient->getIndexName(), $indexesName) && !empty($indexesName)) {
-                continue;
-            }
-
             $allDocuments = $esClient->search('pim_catalog_product', [
                 '_source' => 'identifier',
                 'query'   => [
@@ -50,52 +52,55 @@ abstract class AbstractIndexCommandIntegration extends TestCase
     }
 
     /**
-     * Checks wether the given indexes name are empty, if none given it will check that all registered indexes in the
-     * PIM are empty.
-     *
-     * @param array $indexesName
+     * Checks whether all registered indexes in the PIM are empty.
      */
-    protected function assertIndexesEmpty(array $indexesName = []): void
+    protected function assertIndexesEmpty(): void
     {
         $esClients = $this->get('akeneo_elasticsearch.registry.clients')->getClients();
 
         foreach ($esClients as $esClient) {
-            if (!in_array($esClient->getIndexName(), $indexesName) && !empty($indexesName)) {
-                continue;
-            }
-
-            $allDocuments = $esClient->search('pim_catalog_product', [
-                'query' => [
-                    'match_all' => new \StdClass(),
-                ],
-            ]);
-            $this->assertEquals(0, count($allDocuments['hits']['hits']));
+            $allDocuments = $esClient->search(
+                'pim_catalog_product',
+                [
+                    'query' => [
+                        'match_all' => new \StdClass(),
+                    ],
+                ]
+            );
+            $this->assertCount(0, $allDocuments['hits']['hits']);
         }
     }
 
     /**
-     * Checks wether the given indexes name are not empty, if none given will check that all registered indexes in the
-     * PIM are not empty.
-     *
-     * @param int   $count
-     * @param array $indexesName
+     * asserts that the index of products and product models is not empty
      */
-    protected function assertIndexesCount(int $count, array $indexesName = []): void
+    protected function assertProductAndProductModelIndexNotEmpty()
     {
-        $esClients = $this->get('akeneo_elasticsearch.registry.clients')->getClients();
+        $allDocuments = $this->get('akeneo_elasticsearch.client.product_and_product_model')->search(
+            'pim_catalog_product',
+            [
+                'query' => [
+                    'match_all' => new \StdClass(),
+                ],
+            ]
+        );
+        $this->assertNotCount(0, $allDocuments['hits']['hits']);
+    }
 
-        foreach ($esClients as $esClient) {
-            if (!in_array($esClient->getIndexName(), $indexesName) && !empty($indexesName)) {
-                continue;
-            }
-
-            $allDocuments = $esClient->search('pim_catalog_product', [
+    /**
+     * @param int   $count
+     */
+    protected function assertProductAndProductModelIndexCount(int $count): void
+    {
+        $allDocuments = $this->get('akeneo_elasticsearch.client.product_and_product_model')->search(
+            'pim_catalog_product',
+            [
                 '_source' => 'identifier',
                 'query'   => [
                     'match_all' => new \StdClass(),
                 ],
-            ]);
-            $this->assertEquals($count, $allDocuments['hits']['total']);
-        }
+            ]
+        );
+        $this->assertEquals($count, $allDocuments['hits']['total']);
     }
 }

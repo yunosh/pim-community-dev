@@ -17,8 +17,9 @@ class ResetIndexesCommandIntegration extends AbstractIndexCommandIntegration
 {
     public function testCommandResetsAllIndexes()
     {
-        $this->assertIndexesNotEmpty();
-        $this->runResetIndexesCommand();
+        $this->assertAllRegisteredIndexesNotEmpty();
+        $exitCode = $this->runResetIndexesCommand();
+        $this->assertExitCodeSuccess($exitCode);
         $this->assertIndexesEmpty();
     }
 
@@ -28,5 +29,31 @@ class ResetIndexesCommandIntegration extends AbstractIndexCommandIntegration
     protected function getConfiguration(): Configuration
     {
         return $this->catalog->useFunctionalCatalog('catalog_modeling');
+    }
+
+    /**
+     * Checks whether the given indexes name are not empty, if none given will check that all registered indexes in the
+     * PIM are not empty.
+     *
+     * @param int   $count
+     * @param array $indexesName
+     */
+    protected function assertIndexesCount(int $count, array $indexesName = []): void
+    {
+        $esClients = $this->get('akeneo_elasticsearch.registry.clients')->getClients();
+
+        foreach ($esClients as $esClient) {
+            if (!in_array($esClient->getIndexName(), $indexesName) && !empty($indexesName)) {
+                continue;
+            }
+
+            $allDocuments = $esClient->search('pim_catalog_product', [
+                '_source' => 'identifier',
+                'query'   => [
+                    'match_all' => new \StdClass(),
+                ],
+            ]);
+            PHPUnit_Framework_Assert->assertEquals($count, $allDocuments['hits']['total']);
+        }
     }
 }
