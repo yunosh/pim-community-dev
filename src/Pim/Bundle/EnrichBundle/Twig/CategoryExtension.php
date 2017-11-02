@@ -448,9 +448,11 @@ class CategoryExtension extends \Twig_Extension
         $relatedEntity = 'product'
     ) {
         $label = $category->getLabel();
+        /*
         if ($withCount) {
             $label = $label .' ('. $this->countItems($category, $includeSub, $relatedEntity) .')';
         }
+        */
 
         return $label;
     }
