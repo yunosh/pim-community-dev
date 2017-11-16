@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Akeneo\Component\StorageUtils\Remover\RemoverInterface;
 
 /**
  * @author    Adrien Pétremann <adrien.petremann@akeneo.com>
@@ -52,6 +53,9 @@ class ProductModelController
 
     /** @var ObjectUpdaterInterface */
     private $productModelUpdater;
+
+    /** @var RemoverInterface */
+    private $productModelRemover;
 
     /** @var ValidatorInterface */
     private $validator;
@@ -96,6 +100,7 @@ class ProductModelController
         EntityWithValuesFilter $emptyValuesFilter,
         ConverterInterface $productValueConverter,
         ObjectUpdaterInterface $productModelUpdater,
+        RemoverInterface $productModelRemover,
         ValidatorInterface $validator,
         SaverInterface $productModelSaver,
         NormalizerInterface $constraintViolationNormalizer,
@@ -111,6 +116,7 @@ class ProductModelController
         $this->emptyValuesFilter             = $emptyValuesFilter;
         $this->productValueConverter         = $productValueConverter;
         $this->productModelUpdater           = $productModelUpdater;
+        $this->productModelRemover           = $productModelRemover;
         $this->validator                     = $validator;
         $this->productModelSaver             = $productModelSaver;
         $this->constraintViolationNormalizer = $constraintViolationNormalizer;
@@ -287,6 +293,23 @@ class ProductModelController
     }
 
     /**
+     * Remove product
+     *
+     * @param int $id
+     *
+     * @AclAncestor("pim_enrich_product_model_remove")
+     *
+     * @return JsonResponse
+     */
+    public function removeAction($id)
+    {
+        $product = $this->findProductModelOr404($id);
+        $this->productModelRemover->remove($product);
+
+        return new JsonResponse();
+    }
+
+    /**
      * @param ProductModelInterface $productModel
      *
      * @return array
@@ -329,5 +352,28 @@ class ProductModelController
         }
 
         $this->productModelUpdater->update($productModel, $data);
+    }
+
+    /**
+     * Find a product by its id or return a 404 response
+     *
+     * @param string $id the product id
+     *
+     * @throws NotFoundHttpException
+     *
+     * @return ProductInterface
+     */
+    protected function findProductModelOr404($id)
+    {
+        $productModel = $this->productModelRepository->find($id);
+        $productModel = $this->objectFilter->filterObject($productModel, 'pim.internal_api.product.view') ? null : $productModel;
+
+        if (!$productModel) {
+            throw new NotFoundHttpException(
+                sprintf('Product with id %s could not be found.', $id)
+            );
+        }
+
+        return $productModel;
     }
 }
