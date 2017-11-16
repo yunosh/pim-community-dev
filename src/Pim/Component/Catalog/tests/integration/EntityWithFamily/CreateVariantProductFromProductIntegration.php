@@ -44,7 +44,7 @@ class CreateVariantProductFromProductIntegration extends TestCase
             ],
             ['master_accessories_belts'],
             ['related'],
-            ['X_SELL' => ['products' => ['1111111171']]]
+            ['X_SELL' => ['products' => ['111111111']]]
         );
 
         $this->getFromTestContainer('akeneo_integration_tests.fixture.saver.entity_with_value')->save($this->product);

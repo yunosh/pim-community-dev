@@ -48,10 +48,12 @@ class CreateVariantProduct
         }
 
         $variantProduct = $this->createVariantProduct($product);
-        $parentAttributes = $parent->getFamilyVariant()->getAttributes();
+        $familyVariant = $parent->getFamilyVariant();
+        // Todo should go in the model?
+        $variantAttributes = $familyVariant->getVariantAttributeSet($familyVariant->getNumberOfLevel())->getAttributes();
         $filteredValues = $product->getValues()->filter(
-            function (ValueInterface $value) use ($parentAttributes) {
-                return $parentAttributes->contains($value->getAttribute());
+            function (ValueInterface $value) use ($variantAttributes) {
+                return $variantAttributes->contains($value->getAttribute());
             }
         );
 

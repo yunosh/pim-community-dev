@@ -31,6 +31,8 @@ Feature: Import variant products that were previously products
     And I launch the import job
     And I wait for the "csv_catalog_modeling_product_import" job to finish
     Then the parent of "col-white-m" should be "model-col-white"
+    And the variant family of "col-white-m" should be "clothing_color_size"
+    And the variant product "col-white-m" should only own the following values "description, color, composition"
 
   Scenario: Turn a product into a variant product inside a family variant with 1 levels of hierarchy
     Given the following CSV file to import:
@@ -44,6 +46,7 @@ Feature: Import variant products that were previously products
     And I launch the import job
     And I wait for the "csv_catalog_modeling_product_import" job to finish
     Then the parent of "nin-s" should be "model-nin"
+    And the variant family of "col-white-m" should be "clothing_color_size"
 
   Scenario: Turning a product into a variant product overwrites the values already defined in its ancestry
     Given the following CSV file to import:

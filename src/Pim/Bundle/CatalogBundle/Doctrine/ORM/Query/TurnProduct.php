@@ -53,6 +53,7 @@ SQL;
             [
                 'id' => $variantProduct->getId(),
                 'parent' => null,
+                'familyVariant' => null,
                 'identifier' => $variantProduct->getIdentifier(),
                 'groups' => $variantProduct->getGroups(),
                 'associations' => $variantProduct->getAssociations(),

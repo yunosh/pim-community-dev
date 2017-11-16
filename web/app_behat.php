@@ -13,7 +13,7 @@ if ($env == null) {
     $env = 'behat';
 }
 
-$kernel = new AppKernel($env, false);
+$kernel = new AppKernel($env, true);
 //$kernel = new AppCache($kernel);
 
 // When using the HttpCache, you need to call the method in your front controller instead of relying on the configuration parameter
